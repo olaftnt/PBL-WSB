@@ -3,3 +3,13 @@ node_modules
 .env
 
 /generated/prisma
+# Next.js
+.next/
+out/
+*.log
+
+# Node
+node_modules/
+
+# Cache
+.cache/
