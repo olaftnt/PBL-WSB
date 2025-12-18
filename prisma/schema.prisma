@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url przeniesiony do prisma.config.ts w Prisma 7
+}
+
+enum TicketStatus {
+  NEW
+  IN_PROGRESS
+  WAITING
+  DONE
+  CANCELED
+}
+
+enum SLATYPE {
+  STANDARD
+  EXPRESS
+  VIP
+  WARRANTY
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  devices Device[]
+  tickets Ticket[]
+}
+
+model Device {
+  id         String   @id @default(cuid())
+  customerId String
+  name       String
+  serial     String?
+  model      String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  tickets  Ticket[]
+}
+
+model Ticket {
+  id         String  @id @default(cuid())
+  customerId String
+  deviceId   String?
+
+  title       String
+  description String?
+
+  status   TicketStatus   @default(NEW)
+  priority TicketPriority @default(NORMAL)
+  slaType  SLATYPE        @default(STANDARD)
+
+  physicalCondition String?
+  accessories       String[] // Postgres array
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  device   Device?  @relation(fields: [deviceId], references: [id])
+
+  @@index([customerId])
+  @@index([deviceId])
+  @@index([status])
+  @@index([priority])
+  @@index([slaType])
+  @@index([createdAt])
+}

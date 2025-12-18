@@ -1,0 +1,15 @@
+export type View =
+  | 'dashboard'
+  | 'tickets'
+  | 'ticket-detail'
+  | 'new-ticket'
+  | 'customers'
+  | 'customer-detail'
+  | 'devices'
+  | 'device-detail'
+  | 'public-status'
+  | 'sla'
+  | 'inventory'
+  | 'quotes'
+  | 'quote-detail'
+  | 'admin';

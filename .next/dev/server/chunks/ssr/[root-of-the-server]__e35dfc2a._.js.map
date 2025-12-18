@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 14, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/pieko/Desktop/serwis/src/app/page.tsx"],"sourcesContent":["import { redirect } from 'next/navigation';\n\nexport default function Home() {\n  redirect('/dashboard');\n}\n"],"names":[],"mappings":";;;;AAAA;AAAA;;AAEe,SAAS;IACtB,IAAA,iMAAQ,EAAC;AACX"}}]
+}
