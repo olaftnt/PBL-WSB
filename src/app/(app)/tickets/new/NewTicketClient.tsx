@@ -11,10 +11,11 @@ export default function NewTicketClient({ customers, devices }: { customers: any
     <NewTicket
       customers={customers}
       devices={devices}
-      onCreated={() => router.push('/tickets')}
       onCancel={() => router.push('/tickets')}
+      onCreated={() => router.push('/tickets')}
       onCreate={async (payload) => {
-        await createTicket(payload);
+        const ticket = await createTicket(payload);
+        router.push(`/tickets/${ticket.id}`); // albo router.push('/tickets')
       }}
     />
   );
