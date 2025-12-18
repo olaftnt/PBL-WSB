@@ -13,7 +13,9 @@ import type { View } from '@/types/view';
 import type { TicketPriority, TicketStatus } from '@prisma/client';
 
 type TicketRow = {
-  id: string; // prisma cuid
+  id: string; // prisma id
+  number: string; // INCxxxxx  ✅
+
   title: string;
   status: TicketStatus;
   priority: TicketPriority;
@@ -97,7 +99,7 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
         t.title.toLowerCase().includes(q) ||
         t.customer?.name?.toLowerCase().includes(q) ||
         (t.device?.name ?? '').toLowerCase().includes(q) ||
-        t.id.toLowerCase().includes(q);
+        t.number.toLowerCase().includes(q) || t.id.toLowerCase().includes(q);
 
       const matchStatus = statusFilter === 'all' || t.status === statusFilter;
       const matchPriority = priorityFilter === 'all' || t.priority === priorityFilter;
@@ -111,15 +113,15 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-white text-2xl mb-1">Ticket Management</h1>
-          <p className="text-[#94A3B8]">Manage and track repair tickets</p>
+          <h1 className="text-white text-2xl mb-1">Zgłoszenia</h1>
+          <p className="text-[#94A3B8]">Zarządzanie zgłoszeniami</p>
         </div>
         <button
           onClick={() => onNavigate('new-ticket')}
           className="px-6 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          New Ticket
+          Nowe zgłoszenie
         </button>
       </div>
 
@@ -131,7 +133,7 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" />
               <input
                 type="text"
-                placeholder="Search by ticket ID, title, customer, or device..."
+                placeholder="Sprawdź po ID, tytule, kliencie lub urządzeniu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
@@ -145,12 +147,12 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
             >
-              <option value="all">All Statuses</option>
-              <option value="NEW">New</option>
-              <option value="IN_PROGRESS">In progress</option>
-              <option value="WAITING">Waiting</option>
-              <option value="DONE">Done</option>
-              <option value="CANCELED">Canceled</option>
+              <option value="all">Wszystkie statusy</option>
+              <option value="NEW">Nowe</option>
+              <option value="IN_PROGRESS">W trakcie realizacji</option>
+              <option value="WAITING">Oczekujące</option>
+              <option value="DONE">Wykonane</option>
+              <option value="CANCELED">Anulowane</option>
             </select>
           </div>
 
@@ -160,26 +162,22 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
               onChange={(e) => setPriorityFilter(e.target.value as any)}
               className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
             >
-              <option value="all">All Priorities</option>
-              <option value="CRITICAL">Critical</option>
-              <option value="HIGH">High</option>
-              <option value="NORMAL">Normal</option>
-              <option value="LOW">Low</option>
+              <option value="all">Wszystkie priorytety</option>
+              <option value="CRITICAL">Krytyczny</option>
+              <option value="HIGH">Wysoki</option>
+              <option value="NORMAL">Normalny</option>
+              <option value="LOW">Niski</option>
             </select>
           </div>
         </div>
 
         <div className="flex items-center gap-3 mt-4 pt-4 border-t border-[#1A2642]">
           <button className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2">
-            <Filter className="w-4 h-4" />
-            More Filters
-          </button>
-          <button className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2">
             <Download className="w-4 h-4" />
-            Export
+            Eksportuj
           </button>
           <div className="ml-auto text-[#94A3B8] text-sm">
-            {filteredTickets.length} tickets found
+            {filteredTickets.length} znalezione
           </div>
         </div>
       </div>
@@ -190,14 +188,14 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#1A2642]">
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Ticket ID</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Title</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Customer</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Device</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Numer zgłoszenia</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Tytuł</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Klient</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Urządzenie</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Status</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Priority</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Deadline</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Created</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Priorytet</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Termin realizacji</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Data utworzenia</th>
               </tr>
             </thead>
             <tbody>
@@ -210,7 +208,7 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
                     className="border-b border-[#1A2642] hover:bg-[#121B2D] cursor-pointer transition-colors"
                   >
                     <td className="px-6 py-4">
-                      <span className="text-white">{t.id}</span>
+                      <span className="text-white">{t.number}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-[#94A3B8]">{t.title}</span>

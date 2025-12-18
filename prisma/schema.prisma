@@ -30,19 +30,22 @@ enum TicketPriority {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   name      String
   email     String?
   phone     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  devices Device[]
-  tickets Ticket[]
+  devices   Device[]
+  tickets   Ticket[]
+
+  @@index([name])
+  @@unique([email]) // jeśli email ma być unikalny (opcjonalne – usuń jeśli nie chcesz)
 }
 
 model Device {
-  id         String   @id @default(cuid())
+  id         String   @id @default(uuid())
   customerId String
   name       String
   serial     String?
@@ -51,30 +54,34 @@ model Device {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  customer Customer @relation(fields: [customerId], references: [id])
-  tickets  Ticket[]
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tickets    Ticket[]
+
+  @@index([customerId])
+  @@index([serial])
 }
 
 model Ticket {
-  id         String  @id @default(cuid())
+  id         String  @id @default(uuid())
+  number     String  @unique
   customerId String
   deviceId   String?
 
   title       String
   description String?
 
-  status   TicketStatus   @default(NEW)
-  priority TicketPriority @default(NORMAL)
-  slaType  SLATYPE        @default(STANDARD)
+  status      TicketStatus   @default(NEW)
+  priority    TicketPriority @default(NORMAL)
+  slaType     SLATYPE        @default(STANDARD)
 
   physicalCondition String?
-  accessories       String[] // Postgres array
+  accessories       String[] // Postgres text[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  customer Customer @relation(fields: [customerId], references: [id])
-  device   Device?  @relation(fields: [deviceId], references: [id])
+  customer  Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  device    Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
 
   @@index([customerId])
   @@index([deviceId])
