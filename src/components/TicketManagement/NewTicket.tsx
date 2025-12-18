@@ -127,13 +127,13 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div>
-            <h1 className="text-white text-2xl mb-1">New Ticket</h1>
-            <p className="text-[#94A3B8]">Create device intake ticket</p>
+            <h1 className="text-white text-2xl mb-1">Nowe zgłoszenie</h1>
+            <p className="text-[#94A3B8]">Tworzenie nowego zgłoszenia</p>
           </div>
         </div>
         <div className="text-right">
           <p className="text-[#64748B] text-sm">Ticket ID</p>
-          <p className="text-[#00FF88]">Auto (Prisma)</p>
+          <p className="text-[#00FF88]">Auto</p>
         </div>
       </div>
 
@@ -145,14 +145,14 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white flex items-center gap-2">
                 <User className="w-5 h-5 text-[#00D9FF]" />
-                Customer Information
+                Klient
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCustomerModal(true)}
                 className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#00FF88] hover:bg-[#00FF88]/5 transition-colors flex items-center gap-2 text-sm"
               >
-                {selectedCustomer ? 'Change Customer' : 'Select Customer'}
+                {selectedCustomer ? 'Zmień klienta' : 'Wybierz klienta'}
                 <Search className="w-4 h-4" />
               </button>
             </div>
@@ -166,13 +166,13 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
             ) : (
               <div className="bg-[#121B2D] rounded-lg p-6 border border-[#1A2642] border-dashed text-center">
                 <User className="w-12 h-12 text-[#64748B] mx-auto mb-3" />
-                <p className="text-[#94A3B8]">No customer selected</p>
+                <p className="text-[#94A3B8]">Nie wybrano klienta</p>
                 <button
                   type="button"
                   onClick={() => setShowCustomerModal(true)}
                   className="mt-3 text-[#00FF88] hover:text-[#00CC6A] text-sm"
                 >
-                  Select customer
+                  Wybierz klienta
                 </button>
               </div>
             )}
@@ -183,16 +183,16 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-[#A78BFA]" />
-                Device Information
+                Informacje o urządzeniu
               </h3>
               <button
                 type="button"
                 onClick={() => setShowDeviceModal(true)}
                 className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#00FF88] hover:bg-[#00FF88]/5 transition-colors flex items-center gap-2 text-sm"
                 disabled={!selectedCustomer}
-                title={!selectedCustomer ? 'Select customer first' : undefined}
+                title={!selectedCustomer ? 'Wybierz najpierw klienta' : undefined}
               >
-                {selectedDevice ? 'Change Device' : 'Select Device'}
+                {selectedDevice ? 'Zmień urządzenie' : 'Wybierz urządzenie'}
                 <Search className="w-4 h-4" />
               </button>
             </div>
@@ -204,21 +204,21 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
                   <div className="flex-1">
                     <p className="text-white mb-1">{selectedDevice.name}</p>
                     <p className="text-[#94A3B8] text-sm mb-1">Model: {selectedDevice.model ?? '—'}</p>
-                    <p className="text-[#64748B] text-sm">Serial: {selectedDevice.serial ?? '—'}</p>
+                    <p className="text-[#64748B] text-sm">SN: {selectedDevice.serial ?? '—'}</p>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="bg-[#121B2D] rounded-lg p-6 border border-[#1A2642] border-dashed text-center">
                 <Smartphone className="w-12 h-12 text-[#64748B] mx-auto mb-3" />
-                <p className="text-[#94A3B8]">No device selected</p>
+                <p className="text-[#94A3B8]">Nie wybrano urządzenia</p>
                 <button
                   type="button"
                   onClick={() => setShowDeviceModal(true)}
                   className="mt-3 text-[#00FF88] hover:text-[#00CC6A] text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!selectedCustomer}
                 >
-                  Select device
+                  Wybierz urządzenie
                 </button>
               </div>
             )}
@@ -226,11 +226,11 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
 
           {/* Issue Description */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Issue Description</h3>
+            <h3 className="text-white mb-4">Opis problemu</h3>
             <textarea
               value={formData.issueDescription}
               onChange={(e) => setFormData({ ...formData, issueDescription: e.target.value })}
-              placeholder="Describe the issue with the device..."
+              placeholder="Opisz problem z urządzeniem..."
               rows={5}
               className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors resize-none"
               required
@@ -239,11 +239,11 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
 
           {/* Physical Condition */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Physical Condition Notes</h3>
+            <h3 className="text-white mb-4">Uwagi o stanie fizycznym</h3>
             <textarea
               value={formData.physicalCondition}
               onChange={(e) => setFormData({ ...formData, physicalCondition: e.target.value })}
-              placeholder="Note any scratches, dents, or physical damage..."
+              placeholder="Zanotuj wszelkie śladu, zarysowania lub uszkodzenia fizyczne..."
               rows={4}
               className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors resize-none"
             />
@@ -251,7 +251,7 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
 
           {/* Accessories */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Included Accessories</h3>
+            <h3 className="text-white mb-4">Dołączone akcesoria</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {accessoryOptions.map((accessory) => (
                 <label
@@ -284,12 +284,12 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
         <div className="space-y-6">
           {/* Priority */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Priority Level</h3>
+            <h3 className="text-white mb-4">Priorytet zgłoszenia</h3>
             <div className="space-y-2">
               {[
-                { value: 'low', label: 'Low', color: 'from-[#00D9FF] to-[#0099CC]' },
-                { value: 'medium', label: 'Medium', color: 'from-[#FFB800] to-[#CC9400]' },
-                { value: 'high', label: 'High', color: 'from-[#FF6B35] to-[#CC5529]' },
+                { value: 'low', label: 'Niski', color: 'from-[#00D9FF] to-[#0099CC]' },
+                { value: 'medium', label: 'Średni', color: 'from-[#FFB800] to-[#CC9400]' },
+                { value: 'high', label: 'Wysoki', color: 'from-[#FF6B35] to-[#CC5529]' },
               ].map((priority) => (
                 <label
                   key={priority.value}
@@ -317,13 +317,13 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
 
           {/* SLA Type */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">SLA Type</h3>
+            <h3 className="text-white mb-4">Typ SLA</h3>
             <div className="space-y-2">
               {[
-                { value: 'standard', label: 'Standard', time: '3-5 days' },
-                { value: 'express', label: 'Express', time: '24 hours' },
-                { value: 'vip', label: 'VIP', time: '12 hours' },
-                { value: 'warranty', label: 'Warranty', time: '5-7 days' },
+                { value: 'standard', label: 'Standard', time: '3-5 dni' },
+                { value: 'express', label: 'Express', time: '24 godziny' },
+                { value: 'vip', label: 'VIP', time: '12 godzin' },
+                { value: 'warranty', label: 'Warranty', time: '5-7 dni' },
               ].map((sla) => (
                 <label
                   key={sla.value}
@@ -359,7 +359,7 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
             className="w-full py-4 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Save className="w-5 h-5" />
-            {submitting ? 'Creating…' : 'Create Ticket'}
+            {submitting ? 'Tworzenie…' : 'Utwórz zgłoszenie'}
           </button>
         </div>
       </form>
@@ -369,7 +369,7 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white">Select Customer</h3>
+              <h3 className="text-white">Wybierz klienta</h3>
               <button
                 type="button"
                 onClick={() => setShowCustomerModal(false)}
@@ -401,7 +401,7 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
                 onClick={() => alert('Dodawanie klienta: do zrobienia (Customers CRUD)')}
               >
                 <Plus className="w-5 h-5" />
-                Add New Customer
+                Dodaj nowego klienta
               </button>
             </div>
           </div>
@@ -413,7 +413,7 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white">Select Device</h3>
+              <h3 className="text-white">Wybierz urządzenie</h3>
               <button
                 type="button"
                 onClick={() => setShowDeviceModal(false)}
@@ -437,7 +437,7 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
                   <div>
                     <p className="text-white mb-1">{device.name}</p>
                     <p className="text-[#94A3B8] text-sm mb-1">Model: {device.model ?? '—'}</p>
-                    <p className="text-[#64748B] text-sm">Serial: {device.serial ?? '—'}</p>
+                    <p className="text-[#64748B] text-sm">SN: {device.serial ?? '—'}</p>
                   </div>
                 </button>
               ))}
@@ -448,7 +448,7 @@ export function NewTicket({ customers, devices, onCreate, onCancel, onCreated }:
                 disabled={!selectedCustomer}
               >
                 <Plus className="w-5 h-5" />
-                Add New Device
+                Dodaj nowe urządzenie
               </button>
             </div>
           </div>
