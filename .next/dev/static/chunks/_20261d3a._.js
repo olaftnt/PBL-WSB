@@ -1053,7 +1053,7 @@ function NewTicket({ customers, devices, onCreate, onCancel, onCreated }) {
         columnNumber: 5
     }, this);
 }
-_s(NewTicket, "vV36OMyjBIwXq6NZNZ0w97cyb7M=");
+_s(NewTicket, "gmnJvHFMPA0KtxMHMYe3USsEHHQ=");
 _c = NewTicket;
 var _c;
 __turbopack_context__.k.register(_c, "NewTicket");
