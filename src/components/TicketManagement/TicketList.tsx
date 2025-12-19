@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { View } from '@/types/view';
 import type { TicketPriority, TicketStatus } from '@prisma/client';
+import * as XLSX from 'xlsx';
 
 type TicketRow = {
   id: string;      // prisma cuid (nawigacja)
@@ -80,7 +81,20 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
   const filteredTickets = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
+    // domyślne ukrywanie DONE + CANCELED, jeśli statusFilter === 'all'
+    const shouldHideDoneCanceledByDefault = statusFilter === 'all';
+
     return tickets.filter((t) => {
+      if (shouldHideDoneCanceledByDefault && (t.status === 'DONE' || t.status === 'CANCELED')) {
+        return false;
+      }
+
+      const matchStatus = statusFilter === 'all' || t.status === statusFilter;
+      if (!matchStatus) return false;
+
+      const matchPriority = priorityFilter === 'all' || t.priority === priorityFilter;
+      if (!matchPriority) return false;
+
       const matchQuery =
         !q ||
         t.number.toLowerCase().includes(q) ||
@@ -88,12 +102,48 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
         t.customer?.name?.toLowerCase().includes(q) ||
         (t.device?.name ?? '').toLowerCase().includes(q);
 
-      const matchStatus = statusFilter === 'all' || t.status === statusFilter;
-      const matchPriority = priorityFilter === 'all' || t.priority === priorityFilter;
-
-      return matchQuery && matchStatus && matchPriority;
+      return matchQuery;
     });
   }, [tickets, searchQuery, statusFilter, priorityFilter]);
+
+  const handleExportXlsx = () => {
+    // Eksportujemy to, co aktualnie widzisz w tabeli (filteredTickets)
+    const rows = filteredTickets.map((t) => ({
+      'Numer zgłoszenia': t.number,
+      'Tytuł': t.title,
+      'Klient': t.customer?.name ?? '',
+      'Urządzenie': t.device?.name ?? '',
+      'Status': t.status,
+      'Priorytet': t.priority,
+      'Termin': deadlineLabel(t.status),
+      'Utworzono': fmtCreated(t.createdAt),
+      // Przydatne technicznie (możesz usunąć jeśli nie chcesz)
+      'ID (wewn.)': t.id,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Zgloszenia');
+
+    // lepsza szerokość kolumn
+    ws['!cols'] = [
+      { wch: 16 }, // Numer
+      { wch: 40 }, // Tytuł
+      { wch: 24 }, // Klient
+      { wch: 24 }, // Urządzenie
+      { wch: 14 }, // Status
+      { wch: 12 }, // Priorytet
+      { wch: 10 }, // Termin
+      { wch: 18 }, // Utworzono
+      { wch: 36 }, // ID
+    ];
+
+    const yyyy = new Date().getFullYear();
+    const mm = String(new Date().getMonth() + 1).padStart(2, '0');
+    const dd = String(new Date().getDate()).padStart(2, '0');
+
+    XLSX.writeFile(wb, `zgloszenia_${yyyy}-${mm}-${dd}.xlsx`);
+  };
 
   return (
     <div className="space-y-6">
@@ -132,7 +182,7 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
             >
-              <option value="all">Wszystkie statusy</option>
+              <option value="all">Aktywne (bez wykonanych i anulowanych)</option>
               <option value="NEW">Nowe</option>
               <option value="IN_PROGRESS">W trakcie</option>
               <option value="WAITING">Oczekujące</option>
@@ -157,10 +207,15 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
         </div>
 
         <div className="flex items-center gap-3 mt-4 pt-4 border-t border-[#1A2642]">
-          <button className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportXlsx}
+            className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2"
+          >
             <Download className="w-4 h-4" />
-            Eksportuj
+            Eksportuj (XLSX)
           </button>
+
           <div className="ml-auto text-[#94A3B8] text-sm">
             {filteredTickets.length} znalezione
           </div>
