@@ -2,44 +2,57 @@
 
 import { prisma } from '@/lib/prisma';
 import { generateTicketNumber } from '@/lib/ticketNumber';
-import { revalidatePath } from 'next/cache';
-import type { TicketPriority, SLATYPE } from '@prisma/client';
+import { TicketPriority, TicketStatus, SLATYPE } from '@prisma/client';
 
-export async function createTicket(input: {
+export type CreateTicketInput = {
   customerId: string;
   deviceId?: string | null;
-
   title: string;
   description?: string | null;
-
   priority: TicketPriority;
   slaType: SLATYPE;
-
   physicalCondition?: string | null;
   accessories: string[];
-}) {
+};
+
+/* =======================
+   CREATE TICKET
+======================= */
+export async function createTicket(input: CreateTicketInput) {
   const number = await generateTicketNumber();
 
-  const ticket = await prisma.ticket.create({
+  return prisma.ticket.create({
     data: {
       number,
       customerId: input.customerId,
       deviceId: input.deviceId ?? null,
-
       title: input.title,
       description: input.description ?? null,
-
       priority: input.priority,
       slaType: input.slaType,
-
       physicalCondition: input.physicalCondition ?? null,
       accessories: input.accessories,
-
-      status: 'NEW',
+      status: TicketStatus.NEW,
     },
-    select: { id: true, number: true },
+    include: {
+      customer: true,
+      device: true,
+    },
   });
+}
 
-  revalidatePath('/tickets');
-  return ticket;
+/* =======================
+   UPDATE STATUS
+======================= */
+export async function updateTicketStatus(input: {
+  id: string;
+  status: TicketStatus;
+}) {
+  return prisma.ticket.update({
+    where: { id: input.id },
+    data: {
+      status: input.status,
+      updatedAt: new Date(),
+    },
+  });
 }

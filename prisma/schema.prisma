@@ -29,23 +29,26 @@ enum TicketPriority {
   CRITICAL
 }
 
+enum TicketEventType {
+  CREATED
+  STATUS_CHANGED
+  NOTE
+}
+
 model Customer {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   name      String
   email     String?
   phone     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  devices   Device[]
-  tickets   Ticket[]
-
-  @@index([name])
-  @@unique([email]) // jeśli email ma być unikalny (opcjonalne – usuń jeśli nie chcesz)
+  devices Device[]
+  tickets Ticket[]
 }
 
 model Device {
-  id         String   @id @default(uuid())
+  id         String   @id @default(cuid())
   customerId String
   name       String
   serial     String?
@@ -54,15 +57,12 @@ model Device {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  tickets    Ticket[]
-
-  @@index([customerId])
-  @@index([serial])
+  customer Customer @relation(fields: [customerId], references: [id])
+  tickets  Ticket[]
 }
 
 model Ticket {
-  id         String  @id @default(uuid())
+  id         String  @id @default(cuid())
   number     String  @unique
   customerId String
   deviceId   String?
@@ -70,23 +70,39 @@ model Ticket {
   title       String
   description String?
 
-  status      TicketStatus   @default(NEW)
-  priority    TicketPriority @default(NORMAL)
-  slaType     SLATYPE        @default(STANDARD)
+  status   TicketStatus   @default(NEW)
+  priority TicketPriority @default(NORMAL)
+  slaType  SLATYPE        @default(STANDARD)
 
   physicalCondition String?
-  accessories       String[] // Postgres text[]
+  accessories       String[] // Postgres array
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  customer  Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  device    Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  customer Customer @relation(fields: [customerId], references: [id])
+  device   Device?  @relation(fields: [deviceId], references: [id])
+
+  events TicketEvent[]
 
   @@index([customerId])
   @@index([deviceId])
   @@index([status])
   @@index([priority])
   @@index([slaType])
+  @@index([createdAt])
+}
+
+model TicketEvent {
+  id        String          @id @default(cuid())
+  ticketId  String
+  type      TicketEventType
+  message   String
+  meta      Json?
+  createdAt DateTime        @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
   @@index([createdAt])
 }
