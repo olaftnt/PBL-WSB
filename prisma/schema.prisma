@@ -31,7 +31,7 @@ enum TicketPriority {
 
 enum TicketEventType {
   CREATED
-  STATUS_CHANGED
+  STATUS
   NOTE
 }
 
@@ -44,7 +44,7 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   devices Device[]
-  tickets Ticket[]
+  tickets  Ticket[]
 }
 
 model Device {
@@ -94,12 +94,12 @@ model Ticket {
 }
 
 model TicketEvent {
-  id        String          @id @default(cuid())
+  id        String         @id @default(cuid())
   ticketId  String
   type      TicketEventType
   message   String
-  meta      Json?
-  createdAt DateTime        @default(now())
+  author    String?
+  createdAt DateTime       @default(now())
 
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 

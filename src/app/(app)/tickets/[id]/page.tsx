@@ -1,20 +1,25 @@
 import { prisma } from '@/lib/prisma';
 import TicketDetailClient from './TicketDetailClient';
-import { notFound } from 'next/navigation';
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
 
   const ticket = await prisma.ticket.findUnique({
     where: { id },
-    include: { customer: true, device: true },
+    include: {
+      customer: true,
+      device: true,
+      events: { orderBy: { createdAt: 'desc' } },
+    },
   });
 
-  if (!ticket) return notFound();
+  if (!ticket) {
+    return (
+      <div className="p-6 text-white">
+        Nie znaleziono zgłoszenia.
+      </div>
+    );
+  }
 
   return <TicketDetailClient ticket={ticket} />;
 }

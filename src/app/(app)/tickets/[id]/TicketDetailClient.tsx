@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import type { TicketStatus } from '@prisma/client';
-import { updateTicketStatus } from '@/app/(app)/_actions/tickets';
+import type { TicketStatus, TicketPriority, SLATYPE } from '@prisma/client';
+import { updateTicketStatus, addTicketNote, updateTicket, deleteTicket } from '@/app/(app)/_actions/tickets';
 import { TicketDetail } from '@/components/TicketManagement/TicketDetail';
 
 export default function TicketDetailClient({ ticket }: { ticket: any }) {
@@ -13,8 +13,35 @@ export default function TicketDetailClient({ ticket }: { ticket: any }) {
       ticket={ticket}
       onBack={() => router.push('/tickets')}
       onUpdateStatus={async (status: TicketStatus) => {
-        await updateTicketStatus({ id: ticket.id, status });
-        router.refresh(); // odświeża dane server componentu
+        await updateTicketStatus({ id: ticket.id, status, author: 'user' });
+        router.refresh();
+      }}
+      onAddNote={async (message: string) => {
+        await addTicketNote({ ticketId: ticket.id, message, author: 'user' });
+        router.refresh();
+      }}
+      onEdit={async (payload: {
+        title: string;
+        description: string | null;
+        priority: TicketPriority;
+        slaType: SLATYPE;
+        physicalCondition: string | null;
+        accessories: string[];
+      }) => {
+        await updateTicket({
+          id: ticket.id,
+          title: payload.title,
+          description: payload.description,
+          priority: payload.priority,
+          slaType: payload.slaType,
+          physicalCondition: payload.physicalCondition,
+          accessories: payload.accessories,
+        });
+        router.refresh();
+      }}
+      onDelete={async () => {
+        await deleteTicket({ id: ticket.id });
+        router.push('/tickets');
       }}
     />
   );
