@@ -1,8 +1,17 @@
 import { prisma } from '@/lib/prisma';
 
 export async function generateTicketNumber() {
-  const res = await prisma.$queryRaw<{ nextval: bigint }[]>
-    `select nextval('ticket_number_seq')`;
+  const last = await prisma.ticket.findFirst({
+    orderBy: { createdAt: 'desc' },
+    select: { number: true },
+  });
 
-  return `INC${String(res[0].nextval).padStart(5, '0')}`;
+  if (!last?.number) {
+    return 'INC000001';
+  }
+
+  const match = last.number.match(/^INC(\d+)$/);
+  const next = match ? Number(match[1]) + 1 : 1;
+
+  return `INC${String(next).padStart(6, '0')}`;
 }

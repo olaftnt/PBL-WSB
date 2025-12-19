@@ -1,12 +1,25 @@
-'use client';
+import { prisma } from '@/lib/prisma';
+import TicketDetailClient from './TicketDetailClient';
 
-import { useRouter } from 'next/navigation';
-import { viewToPath } from '@/lib/viewRouter';
-import { TicketDetail } from '@/components/TicketManagement/TicketDetail';
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
 
-export default function TicketDetailPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const onNavigate = (view: any, id?: string) => router.push(viewToPath(view, id));
+  const ticket = await prisma.ticket.findUnique({
+    where: { id },
+    include: {
+      customer: true,
+      device: true,
+      events: { orderBy: { createdAt: 'desc' } },
+    },
+  });
 
-  return <TicketDetail ticketId={params.id} onNavigate={onNavigate} />;
+  if (!ticket) {
+    return (
+      <div className="p-6 text-white">
+        Nie znaleziono zgłoszenia.
+      </div>
+    );
+  }
+
+  return <TicketDetailClient ticket={ticket} />;
 }
