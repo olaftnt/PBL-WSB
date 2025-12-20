@@ -26,7 +26,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Nie znaleziono zgłoszenia' }, { status: 404 });
     }
 
-    
     const statusLabels: Record<string, string> = {
       CREATED: 'Utworzenie zgłoszenia',
       IN_PROGRESS: 'Sprzęt w trakcie naprawy',
@@ -36,42 +35,57 @@ export async function POST(req: Request) {
       NEW: 'Przyjęcie sprzętu na serwis',
     };
 
-    
+    const allowedStatuses = ['NEW', 'CANCELED', 'CREATED', 'IN_PROGRESS', 'WAITING', 'DONE'];
+
     const extractStatusFromMessage = (message?: string) => {
       if (!message) return null;
-
       const match = message.match(/status na\s+([A-Z_]+)/i);
       return match ? match[1].toUpperCase() : null;
     };
 
-    const events = ticket.events.map(e => {
-      let newStatus: string | null = null;
-      let statusMessage: string | null = null;
+    const events = ticket.events
+      .map(e => {
+        let newStatus: string | null = null;
+        let statusMessage: string | null = null;
 
-      if (e.type === 'STATUS') {
-        newStatus = extractStatusFromMessage(e.message);
+        if (e.type === 'STATUS') {
+          // Wyciągamy status z message
+          newStatus = extractStatusFromMessage(e.message);
 
-        if (newStatus) {
-          statusMessage =
-            statusLabels[newStatus] ??
-            `Zmieniono status na ${newStatus}`;
-        } else {
-          statusMessage = 'Zmiana statusu';
+          // Jeśli extractStatusFromMessage nie zadziałał, szukamy frazy w wiadomości
+          if (!newStatus && e.message) {
+            for (const s of allowedStatuses) {
+              if (e.message.toUpperCase().includes(s)) {
+                newStatus = s;
+                break;
+              }
+            }
+          }
+
+          if (newStatus) {
+            statusMessage = statusLabels[newStatus] ?? `Zmieniono status na ${newStatus}`;
+          } else {
+            statusMessage = 'Zmiana statusu';
+          }
         }
-      }
 
-      if (e.type === 'CREATED') {
-        statusMessage = statusLabels.CREATED;
-      }
+        if (e.type === 'CREATED') {
+          newStatus = 'CREATED';
+          statusMessage = statusLabels.CREATED;
+        }
 
-      return {
-        id: e.id,
-        type: e.type,
-        createdAt: e.createdAt,
-        newStatus,
-        statusMessage,
-      };
-    });
+        // Filtrujemy tylko dopuszczalne statusy
+        if (!newStatus || !allowedStatuses.includes(newStatus)) return null;
+
+        return {
+          id: e.id,
+          type: e.type,
+          createdAt: e.createdAt,
+          newStatus,
+          statusMessage,
+        };
+      })
+      .filter(Boolean);
 
     return NextResponse.json({
       number: ticket.number,
