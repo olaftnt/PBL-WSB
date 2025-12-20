@@ -1,17 +1,13 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
-export async function generateTicketNumber() {
-  const last = await prisma.ticket.findFirst({
-    orderBy: { createdAt: 'desc' },
-    select: { number: true },
-  });
+type DbClient = Prisma.TransactionClient;
 
-  if (!last?.number) {
-    return 'INC000001';
-  }
+export async function generateTicketNumber(db: DbClient = prisma) {
+  const rows = await db.$queryRaw<Array<{ nextval: bigint }>>`
+    SELECT nextval('ticket_number_seq') as nextval;
+  `;
 
-  const match = last.number.match(/^INC(\d+)$/);
-  const next = match ? Number(match[1]) + 1 : 1;
-
-  return `INC${String(next).padStart(6, '0')}`;
+  const n = Number(rows[0]?.nextval ?? 0);
+  return `INC${String(n).padStart(6, '0')}`;
 }
