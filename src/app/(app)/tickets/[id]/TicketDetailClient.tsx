@@ -5,12 +5,13 @@ import type { TicketStatus, TicketPriority, SLATYPE } from '@prisma/client';
 import { updateTicketStatus, addTicketNote, updateTicket, deleteTicket } from '@/app/(app)/_actions/tickets';
 import { TicketDetail } from '@/components/TicketManagement/TicketDetail';
 
-export default function TicketDetailClient({ ticket }: { ticket: any }) {
+export default function TicketDetailClient({ ticket, deadline }: { ticket: any, deadline: string }) {
   const router = useRouter();
 
   return (
     <TicketDetail
       ticket={ticket}
+      deadline={deadline} 
       onBack={() => router.push('/tickets')}
       onUpdateStatus={async (status: TicketStatus) => {
         await updateTicketStatus({ id: ticket.id, status, author: 'user' });

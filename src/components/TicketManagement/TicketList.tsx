@@ -7,18 +7,22 @@ import {
   Download,
   Smartphone,
   AlertCircle,
+  Clock // Dodano ikonkę zegara
 } from 'lucide-react';
 import type { View } from '@/types/view';
 import type { TicketPriority, TicketStatus } from '@prisma/client';
 import * as XLSX from 'xlsx';
+import { formatDistanceToNow, isPast, isValid } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 type TicketRow = {
-  id: string;      // prisma cuid (nawigacja)
-  number: string;  // INC...
+  id: string;
+  number: string;
   title: string;
   status: TicketStatus;
   priority: TicketPriority;
   createdAt: string | Date;
+  deadline: string;
 
   customer: { name: string };
   device?: { name: string } | null;
@@ -55,17 +59,23 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
     }
   };
 
-  const deadlineLabel = (status: TicketStatus) => {
-    if (status === 'DONE') return 'OK';
-    return '—';
-  };
+  const getDeadlineInfo = (status: TicketStatus, deadlineStr: string) => {
+    if (status === 'DONE') return { label: 'OK', color: 'text-[#00FF88]' };
+    if (status === 'CANCELED') return { label: '—', color: 'text-[#64748B]' };
 
-  const getDeadlineColor = (deadline: string) => {
-    if (deadline === 'OK') return 'text-[#00FF88]';
-    if (deadline.includes('m') || (deadline.includes('h') && parseInt(deadline) < 4)) return 'text-[#FF6B35]';
-    if (deadline.includes('h') || deadline === '1d') return 'text-[#FFB800]';
-    return 'text-[#94A3B8]';
+    const dateObj = new Date(deadlineStr);
+    if (!isValid(dateObj)) return { label: '—', color: 'text-[#64748B]' };
+
+    const isOverdue = isPast(dateObj);
+    const timeText = formatDistanceToNow(dateObj, { addSuffix: true, locale: pl });
+
+    return {
+      label: timeText,
+      color: isOverdue ? 'text-[#FF6B35] font-bold' : 'text-[#94A3B8]',
+      icon: isOverdue ? <AlertCircle className="w-4 h-4 text-[#FF6B35]" /> : null
+    };
   };
+  // --------------------------------------
 
   const fmtCreated = (d: string | Date) => {
     const dt = typeof d === 'string' ? new Date(d) : d;
@@ -80,8 +90,6 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
 
   const filteredTickets = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-
-    // domyślne ukrywanie DONE + CANCELED, jeśli statusFilter === 'all'
     const shouldHideDoneCanceledByDefault = statusFilter === 'all';
 
     return tickets.filter((t) => {
@@ -107,7 +115,6 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
   }, [tickets, searchQuery, statusFilter, priorityFilter]);
 
   const handleExportXlsx = () => {
-    // Eksportujemy to, co aktualnie widzisz w tabeli (filteredTickets)
     const rows = filteredTickets.map((t) => ({
       'Numer zgłoszenia': t.number,
       'Tytuł': t.title,
@@ -115,9 +122,8 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
       'Urządzenie': t.device?.name ?? '',
       'Status': t.status,
       'Priorytet': t.priority,
-      'Termin': deadlineLabel(t.status),
+      'Termin': getDeadlineInfo(t.status, t.deadline).label,
       'Utworzono': fmtCreated(t.createdAt),
-      // Przydatne technicznie (możesz usunąć jeśli nie chcesz)
       'ID (wewn.)': t.id,
     }));
 
@@ -125,17 +131,9 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Zgloszenia');
 
-    // lepsza szerokość kolumn
     ws['!cols'] = [
-      { wch: 16 }, // Numer
-      { wch: 40 }, // Tytuł
-      { wch: 24 }, // Klient
-      { wch: 24 }, // Urządzenie
-      { wch: 14 }, // Status
-      { wch: 12 }, // Priorytet
-      { wch: 10 }, // Termin
-      { wch: 18 }, // Utworzono
-      { wch: 36 }, // ID
+      { wch: 16 }, { wch: 40 }, { wch: 24 }, { wch: 24 }, 
+      { wch: 14 }, { wch: 12 }, { wch: 15 }, { wch: 18 }, { wch: 36 },
     ];
 
     const yyyy = new Date().getFullYear();
@@ -239,7 +237,8 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
             </thead>
             <tbody>
               {filteredTickets.map((t) => {
-                const dl = deadlineLabel(t.status);
+                const dlInfo = getDeadlineInfo(t.status, t.deadline);
+                
                 return (
                   <tr
                     key={t.id}
@@ -273,11 +272,10 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4">
+                      {/* dynamiczny licznik */}
                       <div className="flex items-center gap-2">
-                        {(dl.includes('m') || (dl.includes('h') && parseInt(dl) < 4)) ? (
-                          <AlertCircle className="w-4 h-4 text-[#FF6B35]" />
-                        ) : null}
-                        <span className={`text-sm ${getDeadlineColor(dl)}`}>{dl}</span>
+                        {dlInfo.icon}
+                        <span className={`text-sm ${dlInfo.color}`}>{dlInfo.label}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">

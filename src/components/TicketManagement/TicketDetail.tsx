@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import type { TicketStatus, TicketPriority, SLATYPE, TicketEventType } from '@prisma/client';
 import { TicketEventType as TicketEventTypeEnum } from '@prisma/client';
+import { formatDistanceToNow, isPast, isValid } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 type TicketDetailModel = {
   id: string;
@@ -43,6 +45,7 @@ type TicketDetailModel = {
 
 interface Props {
   ticket: TicketDetailModel;
+  deadline: string | Date; 
   onBack: () => void;
   onUpdateStatus: (status: TicketStatus) => Promise<any>;
   onAddNote: (message: string) => Promise<any>;
@@ -57,7 +60,7 @@ interface Props {
   onDelete: () => Promise<any>;
 }
 
-export function TicketDetail({ ticket, onBack, onUpdateStatus, onAddNote, onEdit, onDelete }: Props) {
+export function TicketDetail({ ticket, deadline, onBack, onUpdateStatus, onAddNote, onEdit, onDelete }: Props) {
   const [submittingStatus, setSubmittingStatus] = useState(false);
 
   const [newNote, setNewNote] = useState('');
@@ -112,10 +115,28 @@ export function TicketDetail({ ticket, onBack, onUpdateStatus, onAddNote, onEdit
     }
   };
 
-  const deadlineLabel = useMemo(() => {
-    if (ticket.status === 'DONE') return 'OK';
-    return '—';
-  }, [ticket.status]);
+  const deadlineInfo = useMemo(() => {
+    if (ticket.status === 'DONE') {
+      return { label: 'Zakończono', color: 'text-[#00FF88]' };
+    }
+    if (ticket.status === 'CANCELED') {
+      return { label: 'Anulowano', color: 'text-[#64748B]' };
+    }
+
+    const dateObj = new Date(deadline);
+    
+    if (!isValid(dateObj)) {
+      return { label: '—', color: 'text-[#64748B]' };
+    }
+
+    const isOverdue = isPast(dateObj);
+    const timeText = formatDistanceToNow(dateObj, { addSuffix: true, locale: pl });
+    
+    return {
+      label: timeText,
+      color: isOverdue ? 'text-[#FF6B35] font-bold' : 'text-[#00D9FF]'
+    };
+  }, [ticket.status, deadline]);
 
   const submitNote = async () => {
     const msg = newNote.trim();
@@ -318,13 +339,17 @@ export function TicketDetail({ ticket, onBack, onUpdateStatus, onAddNote, onEdit
                 <p className="text-[#64748B] text-sm mb-1">Utworzono</p>
                 <p className="text-white text-sm">{fmt(ticket.createdAt)}</p>
               </div>
+              
+              {/* --- WYŚWIETLANIE CZASU SLA --- */}
               <div>
                 <p className="text-[#64748B] text-sm mb-1">Czas realizacji</p>
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#FFB800]" />
-                  <p className="text-[#FFB800] text-sm">{deadlineLabel}</p>
+                  <Clock className={`w-4 h-4 ${deadlineInfo.color}`} />
+                  <p className={`${deadlineInfo.color} text-sm`}>{deadlineInfo.label}</p>
                 </div>
               </div>
+              {/* --------------------------------- */}
+
               <div>
                 <p className="text-[#64748B] text-sm mb-1">Priorytet</p>
                 <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121B2D] border border-[#1A2642] text-[#94A3B8] text-sm">
@@ -390,7 +415,6 @@ export function TicketDetail({ ticket, onBack, onUpdateStatus, onAddNote, onEdit
         </div>
       </div>
 
-      {/* EDIT MODAL */}
       {showEdit && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full">
