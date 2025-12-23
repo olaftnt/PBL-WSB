@@ -258,7 +258,7 @@ export function PublicStatus() {
                     <div>
                       <h4 className="text-[#00FF88] mb-2">Powiadomimy Cię</h4>
                       <p className="text-[#94A3B8] text-sm">
-                        Otrzymasz e-mail i SMS, gdy urządzenie będzie gotowe do odbioru.
+                        Otrzymasz e-mail i SMS, gdy sprzęt będzie gotowy do odbioru.
                       </p>
                     </div>
                   </div>

@@ -1,6 +1,91 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+
+const SLA_START_MODE: 'CREATED' | 'IN_PROGRESS' = 'CREATED';
+
+const HOLIDAYS_PL = [
+  '01-01',
+  '01-06',
+  '05-01',
+  '05-03',
+  '08-15',
+  '11-01',
+  '11-11',
+  '12-24',
+  '12-25',
+  '12-26',
+];
+
+
+const isBusinessDay = (date: Date) => {
+  const day = date.getDay();
+  if (day === 0 || day === 6) return false;
+
+  const md = date.toISOString().slice(5, 10);
+  return !HOLIDAYS_PL.includes(md);
+};
+
+const addBusinessTime = (startDate: Date, days = 0, hours = 0) => {
+  const date = new Date(startDate);
+  let remainingDays = days;
+  let remainingHours = hours;
+
+  while (remainingDays > 0 || remainingHours > 0) {
+    date.setHours(date.getHours() + 1);
+
+    if (!isBusinessDay(date)) continue;
+
+    if (remainingHours > 0) {
+      remainingHours--;
+    } else if (remainingDays > 0 && date.getHours() === 12) {
+      remainingDays--;
+    }
+  }
+
+  return date;
+};
+
+const calculateEstimatedCompletion = (startDate: Date, slaType: string) => {
+  switch (slaType) {
+    case 'STANDARD':
+      return addBusinessTime(startDate, 5, 0);
+    case 'EXPRESS':
+      return addBusinessTime(startDate, 0, 24);
+    case 'VIP':
+      return addBusinessTime(startDate, 0, 12);
+    case 'WARRANTY':
+      return addBusinessTime(startDate, 7, 0);
+    default:
+      return null;
+  }
+};
+
+const formatPickupDate = (date: Date | null) => {
+  if (!date) return null;
+
+  return date.toLocaleDateString('pl-PL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  });
+};
+
+
+const formatDisplayDate = (date: Date | null) => {
+  if (!date) return null;
+
+  return date.toLocaleString('pl-PL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Warsaw', 
+  });
+};
+
+
 export async function POST(req: Request) {
   try {
     const { ticketNumber, contactInfo } = await req.json();
@@ -23,80 +108,102 @@ export async function POST(req: Request) {
     });
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Nie znaleziono zgłoszenia' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Nie znaleziono zgłoszenia' },
+        { status: 404 }
+      );
     }
 
+    
     const statusLabels: Record<string, string> = {
       CREATED: 'Utworzenie zgłoszenia',
       IN_PROGRESS: 'Sprzęt w trakcie naprawy',
       DONE: 'Naprawa zakończona. Sprzęt gotowy do odbioru',
-      WAITING: 'Oczekiwanie na części, sprzęt w trakcie naprawy',
+      WAITING: 'Oczekiwanie na części',
       CANCELED: 'Anulowanie zgłoszenia',
       NEW: 'Przyjęcie sprzętu na serwis',
     };
 
-    const allowedStatuses = ['NEW', 'CANCELED', 'CREATED', 'IN_PROGRESS', 'WAITING', 'DONE'];
+    const allowedStatuses = Object.keys(statusLabels);
 
     const extractStatusFromMessage = (message?: string) => {
       if (!message) return null;
-      const match = message.match(/status na\s+([A-Z_]+)/i);
-      return match ? match[1].toUpperCase() : null;
+      for (const s of allowedStatuses) {
+        if (message.toUpperCase().includes(s)) return s;
+      }
+      return null;
     };
 
     const events = ticket.events
       .map(e => {
         let newStatus: string | null = null;
-        let statusMessage: string | null = null;
 
         if (e.type === 'STATUS') {
-          // Wyciągamy status z message
           newStatus = extractStatusFromMessage(e.message);
-
-          // Jeśli extractStatusFromMessage nie zadziałał, szukamy frazy w wiadomości
-          if (!newStatus && e.message) {
-            for (const s of allowedStatuses) {
-              if (e.message.toUpperCase().includes(s)) {
-                newStatus = s;
-                break;
-              }
-            }
-          }
-
-          if (newStatus) {
-            statusMessage = statusLabels[newStatus] ?? `Zmieniono status na ${newStatus}`;
-          } else {
-            statusMessage = 'Zmiana statusu';
-          }
         }
 
         if (e.type === 'CREATED') {
           newStatus = 'CREATED';
-          statusMessage = statusLabels.CREATED;
         }
 
-        // Filtrujemy tylko dopuszczalne statusy
-        if (!newStatus || !allowedStatuses.includes(newStatus)) return null;
+        if (!newStatus) return null;
 
         return {
           id: e.id,
           type: e.type,
-          createdAt: e.createdAt,
+          createdAt: formatDisplayDate(e.createdAt),
           newStatus,
-          statusMessage,
+          statusMessage: statusLabels[newStatus],
         };
       })
       .filter(Boolean);
+
+
+    const slaDisabled = ['DONE', 'CANCELED'].includes(ticket.status);
+
+    let slaStartDate: Date | null = null;
+
+    if (!slaDisabled) {
+      if (SLA_START_MODE === 'IN_PROGRESS') {
+        const firstInProgress = events.find(
+          e => e.newStatus === 'IN_PROGRESS'
+        );
+        slaStartDate = firstInProgress?.createdAt
+          ? new Date(firstInProgress.createdAt)
+          : ticket.createdAt;
+      } else {
+        slaStartDate = ticket.createdAt;
+      }
+    }
+
+    const estimatedDate =
+      slaStartDate && !slaDisabled
+        ? calculateEstimatedCompletion(slaStartDate, ticket.slaType)
+        : null;
+
+    let estimatedCompletion: string | null = null;
+
+    if (estimatedDate) {
+      estimatedCompletion = `${formatPickupDate(estimatedDate)}`;
+
+      if (ticket.status === 'WAITING') {
+        estimatedCompletion +=
+          ' oczekiwanie na części - czas realizacji może się wydłużyć';
+      }
+    }
+
+    
 
     return NextResponse.json({
       number: ticket.number,
       status: ticket.status,
       device: ticket.device?.name ?? null,
+      createdAt: formatDisplayDate(ticket.createdAt), 
       events,
-      estimatedCompletion: 'Jak będzie gotowy przewidywany czas oczekiwania',
-      estimatedCost: 'Jak będzie gotowy kosztorys',
+      estimatedCompletion,
+      estimatedCost: null,
       notes: ticket.description,
     });
-
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Błąd serwera' }, { status: 500 });
