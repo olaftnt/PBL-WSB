@@ -14,7 +14,6 @@ import {
 import type { View } from '@/types/view';
 import SLAWidget from '@/components/SLA/SLAWidget';
 
-// 👇 TU DODAŁEM "export" - TERAZ INNE PLIKI MOGĄ TEGO UŻYWAĆ
 export interface DashboardStats {
   total: number;
   active: number;
