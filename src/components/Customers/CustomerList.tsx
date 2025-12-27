@@ -1,25 +1,90 @@
-import { useState } from 'react';
+'use client';
+
+import { useMemo, useState, type FormEvent } from 'react';
 import { Plus, Search, Mail, Phone, Ticket } from 'lucide-react';
 import type { View } from '@/types/view';
+import type { CustomerListItem } from '@/types/customer';
+import type { CreateCustomerInput } from '@/app/(app)/_actions/customers';
 
 interface CustomerListProps {
   onNavigate: (view: View, id?: string) => void;
+  customers: CustomerListItem[];
+  onCreateCustomer: (payload: CreateCustomerInput) => Promise<any>;
 }
 
-const mockCustomers = [
-  { id: '1', name: 'John Smith', email: 'john@email.com', phone: '+1 234 567 8900', tickets: 5, activeTickets: 1, joined: '2024-01-15' },
-  { id: '2', name: 'Sarah Johnson', email: 'sarah@email.com', phone: '+1 234 567 8901', tickets: 12, activeTickets: 2, joined: '2023-11-20' },
-  { id: '3', name: 'Mike Wilson', email: 'mike@email.com', phone: '+1 234 567 8902', tickets: 3, activeTickets: 1, joined: '2024-03-10' },
-  { id: '4', name: 'Emma Davis', email: 'emma@email.com', phone: '+1 234 567 8903', tickets: 8, activeTickets: 0, joined: '2023-09-05' },
-  { id: '5', name: 'Robert Brown', email: 'robert@email.com', phone: '+1 234 567 8904', tickets: 15, activeTickets: 3, joined: '2023-06-12' },
-  { id: '6', name: 'Lisa Anderson', email: 'lisa@email.com', phone: '+1 234 567 8905', tickets: 4, activeTickets: 1, joined: '2024-02-28' },
-  { id: '7', name: 'Tom Martinez', email: 'tom@email.com', phone: '+1 234 567 8906', tickets: 6, activeTickets: 0, joined: '2023-12-08' },
-  { id: '8', name: 'Alice Cooper', email: 'alice@email.com', phone: '+1 234 567 8907', tickets: 9, activeTickets: 2, joined: '2023-08-17' },
-];
+const formatDate = (iso: string) => {
+  const parsed = new Date(iso);
+  return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleDateString('pl-PL');
+};
 
-export function CustomerList({ onNavigate }: CustomerListProps) {
+const initials = (fullName: string) =>
+  fullName
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('');
+
+export function CustomerList({ onNavigate, customers, onCreateCustomer }: CustomerListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const filteredCustomers = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return customers;
+
+    return customers.filter((customer) => {
+      const nameMatch = customer.name.toLowerCase().includes(q);
+      const emailMatch = (customer.email ?? '').toLowerCase().includes(q);
+      const phoneMatch = (customer.phone ?? '').toLowerCase().includes(q);
+      return nameMatch || emailMatch || phoneMatch;
+    });
+  }, [customers, searchQuery]);
+
+  const resetForm = () => {
+    setFirstName('');
+    setLastName('');
+    setEmail('');
+    setPhone('');
+    setError(null);
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const fullName = `${firstName} ${lastName}`.trim() || firstName.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedEmail = email.trim();
+
+    if (!fullName) {
+      setError('Imię i nazwisko są wymagane.');
+      return;
+    }
+    if (!trimmedPhone) {
+      setError('Telefon jest wymagany.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await onCreateCustomer({
+        name: fullName,
+        phone: trimmedPhone,
+        email: trimmedEmail || null,
+      });
+      resetForm();
+      setShowAddModal(false);
+    } catch (err: any) {
+      setError(err?.message ?? 'Nie udało się dodać klienta.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -54,7 +119,7 @@ export function CustomerList({ onNavigate }: CustomerListProps) {
 
       {/* Customer Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockCustomers.map((customer) => (
+        {filteredCustomers.map((customer) => (
           <button
             key={customer.id}
             onClick={() => onNavigate('customer-detail', customer.id)}
@@ -63,7 +128,7 @@ export function CustomerList({ onNavigate }: CustomerListProps) {
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-[#00D9FF] to-[#0099CC] rounded-full flex items-center justify-center">
                 <span className="text-white">
-                  {customer.name.split(' ').map(n => n[0]).join('')}
+                  {initials(customer.name)}
                 </span>
               </div>
               {customer.activeTickets > 0 && (
@@ -78,11 +143,11 @@ export function CustomerList({ onNavigate }: CustomerListProps) {
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 text-[#94A3B8] text-sm">
                 <Mail className="w-4 h-4" />
-                <span className="truncate">{customer.email}</span>
+                <span className="truncate">{customer.email || '—'}</span>
               </div>
               <div className="flex items-center gap-2 text-[#94A3B8] text-sm">
                 <Phone className="w-4 h-4" />
-                <span>{customer.phone}</span>
+                <span>{customer.phone || '—'}</span>
               </div>
             </div>
             <div className="flex items-center justify-between pt-4 border-t border-[#1A2642]">
@@ -90,11 +155,16 @@ export function CustomerList({ onNavigate }: CustomerListProps) {
                 <Ticket className="w-4 h-4 text-[#64748B]" />
                 <span className="text-[#94A3B8] text-sm">{customer.tickets} tickets</span>
               </div>
-              <span className="text-[#64748B] text-xs">Since {customer.joined}</span>
+              <span className="text-[#64748B] text-xs">Since {formatDate(customer.joined)}</span>
             </div>
           </button>
         ))}
       </div>
+      {filteredCustomers.length === 0 && (
+        <div className="text-center text-[#94A3B8] border border-dashed border-[#1A2642] rounded-xl p-8">
+          Brak klientów spełniających kryteria wyszukiwania.
+        </div>
+      )}
 
       {/* Add Customer Modal */}
       {showAddModal && (
@@ -109,13 +179,16 @@ export function CustomerList({ onNavigate }: CustomerListProps) {
                 ✕
               </button>
             </div>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[#94A3B8] text-sm mb-2">First Name</label>
                   <input
                     type="text"
                     placeholder="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    disabled={isSubmitting}
                     className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
                   />
                 </div>
@@ -124,6 +197,9 @@ export function CustomerList({ onNavigate }: CustomerListProps) {
                   <input
                     type="text"
                     placeholder="Smith"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    disabled={isSubmitting}
                     className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
                   />
                 </div>
@@ -133,6 +209,9 @@ export function CustomerList({ onNavigate }: CustomerListProps) {
                 <input
                   type="email"
                   placeholder="john@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubmitting}
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
                 />
               </div>
@@ -141,28 +220,30 @@ export function CustomerList({ onNavigate }: CustomerListProps) {
                 <input
                   type="tel"
                   placeholder="+1 234 567 8900"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={isSubmitting}
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
                 />
               </div>
-              <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Address (Optional)</label>
-                <textarea
-                  placeholder="Street address..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors resize-none"
-                />
-              </div>
+              {error && (
+                <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  {error}
+                </div>
+              )}
               <div className="flex items-center gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60 disabled:hover:scale-100"
                 >
-                  Add Customer
+                  {isSubmitting ? 'Adding...' : 'Add Customer'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
                 >
                   Cancel
                 </button>

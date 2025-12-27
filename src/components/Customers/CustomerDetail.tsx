@@ -1,40 +1,110 @@
-import { ArrowLeft, Mail, Phone, MapPin, Edit, Ticket, Smartphone } from 'lucide-react';
-import type { View } from '@/types/view';
+'use client';
+
+import { useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Mail, Phone, Edit, Ticket, Smartphone } from 'lucide-react';
+import { TicketPriority, TicketStatus } from '@prisma/client';
+import { updateCustomer } from '@/app/(app)/_actions/customers';
+import { viewToPath } from '@/lib/viewRouter';
+
+type CustomerSummary = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  joined: string;
+  totalTickets: number;
+  activeTickets: number;
+  devicesCount: number;
+};
+
+type CustomerTicket = {
+  id: string;
+  number: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  createdAt: string;
+  device: string | null;
+};
+
+type CustomerDevice = {
+  id: string;
+  name: string;
+  model?: string | null;
+  serial?: string | null;
+  type?: string | null;
+};
 
 interface CustomerDetailProps {
-  customerId: string;
-  onNavigate: (view: View, id?: string) => void;
+  customer: CustomerSummary;
+  tickets: CustomerTicket[];
+  devices: CustomerDevice[];
 }
 
-export function CustomerDetail({ customerId, onNavigate }: CustomerDetailProps) {
-  const customer = {
-    id: customerId,
-    name: 'John Smith',
-    email: 'john@email.com',
-    phone: '+1 234 567 8900',
-    address: '123 Main St, New York, NY 10001',
-    joined: '2024-01-15',
-    totalTickets: 5,
-    activeTickets: 1,
-  };
+const statusClasses = {
+  NEW: 'bg-[#00D9FF]/10 text-[#00D9FF] border-[#00D9FF]/20',
+  IN_PROGRESS: 'bg-[#A78BFA]/10 text-[#A78BFA] border-[#A78BFA]/20',
+  WAITING: 'bg-[#FFB800]/10 text-[#FFB800] border-[#FFB800]/20',
+  DONE: 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20',
+  CANCELED: 'bg-[#64748B]/10 text-[#64748B] border-[#64748B]/20',
+};
 
-  const tickets = [
-    { id: 'TK-2024-1247', device: 'MacBook Pro 16"', status: 'diagnosis', created: '2024-12-09', priority: 'high' },
-    { id: 'TK-2024-0892', device: 'MacBook Pro 16"', status: 'delivered', created: '2024-08-15', priority: 'medium' },
-    { id: 'TK-2024-0234', device: 'iPhone 13 Pro', status: 'delivered', created: '2024-03-20', priority: 'low' },
-  ];
+const priorityDot = {
+  CRITICAL: 'bg-[#FF6B35]',
+  HIGH: 'bg-[#FF6B35]',
+  NORMAL: 'bg-[#FFB800]',
+  LOW: 'bg-[#00D9FF]',
+};
 
-  const devices = [
-    { id: '1', type: 'laptop', brand: 'Apple', model: 'MacBook Pro 16"', serial: 'C02XL12345' },
-    { id: '2', type: 'phone', brand: 'Apple', model: 'iPhone 13 Pro', serial: 'FFJK12345' },
-  ];
+const formatDate = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('pl-PL');
+};
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'diagnosis': return 'bg-[#A78BFA]/10 text-[#A78BFA] border-[#A78BFA]/20';
-      case 'repair': return 'bg-[#FF6B35]/10 text-[#FF6B35] border-[#FF6B35]/20';
-      case 'delivered': return 'bg-[#64748B]/10 text-[#64748B] border-[#64748B]/20';
-      default: return 'bg-[#64748B]/10 text-[#64748B] border-[#64748B]/20';
+const initials = (full: string) =>
+  full
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('');
+
+export function CustomerDetail({ customer, tickets, devices }: CustomerDetailProps) {
+  const router = useRouter();
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [name, setName] = useState(customer.name);
+  const [email, setEmail] = useState(customer.email ?? '');
+  const [phone, setPhone] = useState(customer.phone ?? '');
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleUpdate = async (e: FormEvent) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedName) {
+      setError('Imię i nazwisko są wymagane.');
+      return;
+    }
+    if (!trimmedPhone) {
+      setError('Telefon jest wymagany.');
+      return;
+    }
+    setError(null);
+    setIsSaving(true);
+    try {
+      await updateCustomer({
+        id: customer.id,
+        name: trimmedName,
+        phone: trimmedPhone,
+        email: trimmedEmail || null,
+      });
+      setIsEditOpen(false);
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message ?? 'Nie udało się zapisać zmian.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -44,7 +114,7 @@ export function CustomerDetail({ customerId, onNavigate }: CustomerDetailProps) 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => onNavigate('customers')}
+            onClick={() => router.push('/customers')}
             className="p-2 text-[#94A3B8] hover:text-white transition-colors"
           >
             <ArrowLeft className="w-6 h-6" />
@@ -52,16 +122,19 @@ export function CustomerDetail({ customerId, onNavigate }: CustomerDetailProps) 
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-[#00D9FF] to-[#0099CC] rounded-2xl flex items-center justify-center">
               <span className="text-white text-xl">
-                {customer.name.split(' ').map(n => n[0]).join('')}
+                {initials(customer.name)}
               </span>
             </div>
             <div>
               <h1 className="text-white text-2xl mb-1">{customer.name}</h1>
-              <p className="text-[#94A3B8]">Customer since {customer.joined}</p>
+              <p className="text-[#94A3B8]">Customer since {formatDate(customer.joined)}</p>
             </div>
           </div>
         </div>
-        <button className="px-6 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2">
+        <button
+          onClick={() => setIsEditOpen(true)}
+          className="px-6 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2"
+        >
           <Edit className="w-5 h-5" />
           Edit Customer
         </button>
@@ -77,21 +150,14 @@ export function CustomerDetail({ customerId, onNavigate }: CustomerDetailProps) 
                 <Mail className="w-5 h-5 text-[#00D9FF] mt-0.5" />
                 <div>
                   <p className="text-[#64748B] text-sm mb-1">Email</p>
-                  <p className="text-white">{customer.email}</p>
+                  <p className="text-white">{customer.email ?? '—'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Phone className="w-5 h-5 text-[#00FF88] mt-0.5" />
                 <div>
                   <p className="text-[#64748B] text-sm mb-1">Phone</p>
-                  <p className="text-white">{customer.phone}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-[#FF6B35] mt-0.5" />
-                <div>
-                  <p className="text-[#64748B] text-sm mb-1">Address</p>
-                  <p className="text-white">{customer.address}</p>
+                  <p className="text-white">{customer.phone ?? '—'}</p>
                 </div>
               </div>
             </div>
@@ -110,7 +176,7 @@ export function CustomerDetail({ customerId, onNavigate }: CustomerDetailProps) 
               </div>
               <div>
                 <p className="text-[#64748B] text-sm mb-1">Registered Devices</p>
-                <p className="text-white text-2xl">{devices.length}</p>
+                <p className="text-white text-2xl">{customer.devicesCount}</p>
               </div>
             </div>
           </div>
@@ -126,7 +192,7 @@ export function CustomerDetail({ customerId, onNavigate }: CustomerDetailProps) 
                 Ticket History
               </h3>
               <button
-                onClick={() => onNavigate('new-ticket')}
+                onClick={() => router.push('/tickets/new')}
                 className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform text-sm"
               >
                 New Ticket
@@ -136,28 +202,30 @@ export function CustomerDetail({ customerId, onNavigate }: CustomerDetailProps) 
               {tickets.map((ticket) => (
                 <button
                   key={ticket.id}
-                  onClick={() => onNavigate('ticket-detail', ticket.id)}
+                  onClick={() => router.push(viewToPath('ticket-detail', ticket.id))}
                   className="w-full bg-[#121B2D] rounded-lg p-4 border border-[#1A2642] hover:border-[#00FF88] transition-all text-left"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-white">{ticket.id}</span>
-                    <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(ticket.status)}`}>
+                    <span className="text-white">{ticket.number}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs border ${statusClasses[ticket.status] ?? statusClasses.WAITING}`}>
                       {ticket.status}
                     </span>
                   </div>
-                  <p className="text-[#94A3B8] text-sm mb-1">{ticket.device}</p>
+                  <p className="text-[#94A3B8] text-sm mb-1">{ticket.device ?? '—'}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#64748B] text-xs">{ticket.created}</span>
+                    <span className="text-[#64748B] text-xs">{formatDate(ticket.createdAt)}</span>
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        ticket.priority === 'high' ? 'bg-[#FF6B35]' :
-                        ticket.priority === 'medium' ? 'bg-[#FFB800]' : 'bg-[#00D9FF]'
-                      }`}></div>
-                      <span className="text-[#64748B] text-xs capitalize">{ticket.priority}</span>
+                      <div className={`w-2 h-2 rounded-full ${priorityDot[ticket.priority] ?? 'bg-[#64748B]'}`}></div>
+                      <span className="text-[#64748B] text-xs capitalize">{ticket.priority.toLowerCase()}</span>
                     </div>
                   </div>
                 </button>
               ))}
+              {tickets.length === 0 && (
+                <div className="text-center text-[#94A3B8] border border-dashed border-[#1A2642] rounded-lg p-6">
+                  Brak zgłoszeń dla tego klienta.
+                </div>
+              )}
             </div>
           </div>
 
@@ -169,7 +237,7 @@ export function CustomerDetail({ customerId, onNavigate }: CustomerDetailProps) 
                 Registered Devices
               </h3>
               <button
-                onClick={() => onNavigate('devices')}
+                onClick={() => router.push('/devices')}
                 className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#00FF88] hover:bg-[#00FF88]/5 transition-colors text-sm"
               >
                 Add Device
@@ -179,21 +247,97 @@ export function CustomerDetail({ customerId, onNavigate }: CustomerDetailProps) 
               {devices.map((device) => (
                 <button
                   key={device.id}
-                  onClick={() => onNavigate('device-detail', device.id)}
+                  onClick={() => router.push(viewToPath('device-detail', device.id))}
                   className="w-full bg-[#121B2D] rounded-lg p-4 border border-[#1A2642] hover:border-[#00FF88] transition-all text-left flex items-start gap-3"
                 >
                   <Smartphone className="w-10 h-10 text-[#A78BFA] mt-1" />
                   <div className="flex-1">
-                    <p className="text-white mb-1">{device.brand} {device.model}</p>
-                    <p className="text-[#94A3B8] text-sm mb-1">Type: <span className="capitalize">{device.type}</span></p>
-                    <p className="text-[#64748B] text-sm">Serial: {device.serial}</p>
+                    <p className="text-white mb-1">{device.name}{device.model ? ` ${device.model}` : ''}</p>
+                    <p className="text-[#94A3B8] text-sm mb-1">Type: <span className="capitalize">{device.type ?? 'device'}</span></p>
+                    <p className="text-[#64748B] text-sm">Serial: {device.serial ?? '—'}</p>
                   </div>
                 </button>
               ))}
+              {devices.length === 0 && (
+                <div className="text-center text-[#94A3B8] border border-dashed border-[#1A2642] rounded-lg p-6">
+                  Brak urządzeń przypisanych do klienta.
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Edit modal */}
+      {isEditOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white">Edit Customer</h3>
+              <button
+                onClick={() => setIsEditOpen(false)}
+                className="text-[#94A3B8] hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <form className="space-y-4" onSubmit={handleUpdate}>
+              <div>
+                <label className="block text-[#94A3B8] text-sm mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isSaving}
+                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-[#94A3B8] text-sm mb-2">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSaving}
+                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-[#94A3B8] text-sm mb-2">Phone</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={isSaving}
+                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
+                />
+              </div>
+              {error && (
+                <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  {error}
+                </div>
+              )}
+              <div className="flex items-center gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60"
+                >
+                  {isSaving ? 'Saving...' : 'Save changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(false)}
+                  disabled={isSaving}
+                  className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

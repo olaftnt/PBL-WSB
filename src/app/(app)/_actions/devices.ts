@@ -25,3 +25,28 @@ export async function createDevice(input: {
 
   return created;
 }
+
+export async function updateDevice(input: {
+  id: string;
+  name?: string;
+  model?: string | null;
+  serial?: string | null;
+  notes?: string | null;
+}) {
+  const { id } = input;
+  if (!id) throw new Error('device id is required');
+
+  const name = input.name?.trim();
+  const model = input.model?.trim() ?? null;
+  const serial = input.serial?.trim() ?? null;
+  const notes = input.notes?.trim() ?? null;
+
+  if (!name) throw new Error('Device name is required');
+
+  const updated = await prisma.device.update({
+    where: { id },
+    data: { name, model, serial, notes },
+  });
+
+  return updated;
+}

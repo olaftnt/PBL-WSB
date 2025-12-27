@@ -1,15 +1,29 @@
-'use client';
+import { prisma } from '@/lib/prisma';
+import CustomersClient from './CustomersClient';
+import { TicketStatus } from '@prisma/client';
+import type { CustomerListItem } from '@/types/customer';
 
-import { useRouter } from 'next/navigation';
-import { viewToPath } from '@/lib/viewRouter';
-import { CustomerList } from '@/components/Customers/CustomerList';
+export default async function Page() {
+  const customers = await prisma.customer.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      _count: { select: { tickets: true } },
+      tickets: {
+        where: { status: { in: [TicketStatus.NEW, TicketStatus.IN_PROGRESS, TicketStatus.WAITING] } },
+        select: { id: true },
+      },
+    },
+  });
 
-export default function Page() {
-  const router = useRouter();
+  const listItems: CustomerListItem[] = customers.map((customer) => ({
+    id: customer.id,
+    name: customer.name,
+    email: customer.email ?? null,
+    phone: customer.phone ?? null,
+    joined: customer.createdAt.toISOString(),
+    tickets: customer._count.tickets,
+    activeTickets: customer.tickets.length,
+  }));
 
-  const onNavigate = (view: any, id?: string) => {
-    router.push(viewToPath(view, id));
-  };
-
-  return <CustomerList onNavigate={onNavigate} />;
+  return <CustomersClient initialCustomers={listItems} />;
 }
