@@ -84,6 +84,7 @@ model Ticket {
   device   Device?  @relation(fields: [deviceId], references: [id])
 
   events TicketEvent[]
+  partReservations PartReservation[]
 
   @@index([customerId])
   @@index([deviceId])
@@ -103,6 +104,39 @@ model TicketEvent {
 
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
+  @@index([ticketId])
+  @@index([createdAt])
+}
+
+model Part {
+  id           String   @id @default(cuid())
+  sku          String   @unique
+  name         String
+  quantity     Int      @default(0)
+  minQuantity  Int      @default(0)
+  price        Decimal  @db.Decimal(10, 2)
+  reserved     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reservations PartReservation[]
+
+  @@index([sku])
+  @@index([quantity])
+  @@index([minQuantity])
+}
+
+model PartReservation {
+  id        String   @id @default(cuid())
+  partId    String
+  ticketId  String
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  part   Part   @relation(fields: [partId], references: [id])
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@index([partId])
   @@index([ticketId])
   @@index([createdAt])
 }
