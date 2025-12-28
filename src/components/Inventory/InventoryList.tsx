@@ -37,13 +37,13 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ok':
-        return { bg: 'bg-[#00FF88]/10', text: 'text-[#00FF88]', border: 'border-[#00FF88]/20', label: 'In Stock' };
+        return { bg: 'bg-[#00FF88]/10', text: 'text-[#00FF88]', border: 'border-[#00FF88]/20', label: 'OK' };
       case 'low':
-        return { bg: 'bg-[#FFB800]/10', text: 'text-[#FFB800]', border: 'border-[#FFB800]/20', label: 'Low Stock' };
+        return { bg: 'bg-[#FFB800]/10', text: 'text-[#FFB800]', border: 'border-[#FFB800]/20', label: 'Niski stan' };
       case 'critical':
-        return { bg: 'bg-[#FF6B35]/10', text: 'text-[#FF6B35]', border: 'border-[#FF6B35]/20', label: 'Critical' };
+        return { bg: 'bg-[#FF6B35]/10', text: 'text-[#FF6B35]', border: 'border-[#FF6B35]/20', label: 'Krytyczny' };
       default:
-        return { bg: 'bg-[#64748B]/10', text: 'text-[#64748B]', border: 'border-[#64748B]/20', label: 'Unknown' };
+        return { bg: 'bg-[#64748B]/10', text: 'text-[#64748B]', border: 'border-[#64748B]/20', label: 'Brak danych' };
     }
   };
 
@@ -176,15 +176,15 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-white text-2xl mb-1">Inventory & Parts Management</h1>
-          <p className="text-[#94A3B8]">Manage repair parts and stock levels</p>
+          <h1 className="text-white text-2xl mb-1">Magazyn części</h1>
+          <p className="text-[#94A3B8]">Zarządzaj częściami i stanami magazynowymi</p>
         </div>
         <button
           onClick={openAdd}
           className="px-6 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          Add Part
+          Dodaj część
         </button>
       </div>
 
@@ -193,8 +193,8 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
         <div className="bg-[#FF6B35]/10 border border-[#FF6B35]/20 rounded-xl p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-[#FF6B35] mt-0.5" />
           <div>
-            <p className="text-[#FF6B35] mb-1">Low Stock Alert</p>
-            <p className="text-[#94A3B8] text-sm">{lowStockCount} parts are running low or out of stock</p>
+            <p className="text-[#FF6B35] mb-1">Niski stan magazynowy</p>
+            <p className="text-[#94A3B8] text-sm">{lowStockCount} pozycji ma niski lub krytyczny stan</p>
           </div>
         </div>
       )}
@@ -206,7 +206,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" />
             <input
               type="text"
-              placeholder="Search by name or SKU..."
+              placeholder="Szukaj po nazwie lub SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
@@ -214,7 +214,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
           </div>
         </div>
         <div className="text-[#94A3B8] text-sm">
-          {filteredParts.length} parts found
+          {filteredParts.length} części
         </div>
       </div>
 
@@ -225,14 +225,14 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
             <thead>
               <tr className="border-b border-[#1A2642]">
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">SKU</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Part Name</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Category</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Quantity</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Min Stock</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Reserved</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Price</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Nazwa</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Kategoria</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Ilość</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Min. ilość</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Zarezerw.</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Cena</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Status</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Actions</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Akcje</th>
               </tr>
             </thead>
             <tbody>
@@ -304,7 +304,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white">Add New Part</h3>
+              <h3 className="text-white">Dodaj część</h3>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="text-[#94A3B8] hover:text-white"
@@ -327,7 +327,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                 </div>
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Part Name</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Nazwa części</label>
                 <input
                   type="text"
                   value={name}
@@ -339,7 +339,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Quantity</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Ilość</label>
                   <input
                     type="number"
                     value={quantity}
@@ -350,7 +350,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   />
                 </div>
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Min Quantity</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Min ilość</label>
                   <input
                     type="number"
                     value={minQuantity}
@@ -361,7 +361,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   />
                 </div>
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Price</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Cena</label>
                   <input
                     type="number"
                     step="0.01"
@@ -384,7 +384,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60"
                 >
-                  {isSubmitting ? 'Adding...' : 'Add Part'}
+                  {isSubmitting ? 'Dodawanie...' : 'Dodaj część'}
                 </button>
                 <button
                   type="button"
@@ -392,7 +392,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
                 >
-                  Cancel
+                  Anuluj
                 </button>
               </div>
             </form>
@@ -405,7 +405,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white">Edit Part - {selectedPart.name}</h3>
+              <h3 className="text-white">Edytuj część - {selectedPart.name}</h3>
               <button
                 onClick={() => { setShowEditModal(false); setSelectedPart(null); }}
                 className="text-[#94A3B8] hover:text-white"
@@ -427,7 +427,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                 </div>
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Part Name</label>
+                  <label className="block text-[#94A3B8] text-sm mb-2">Nazwa części</label>
                 <input
                   type="text"
                   value={name}
@@ -438,7 +438,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Quantity</label>
+                  <label className="block text-[#94A3B8] text-sm mb-2">Ilość</label>
                   <input
                     type="number"
                     value={quantity}
@@ -448,7 +448,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   />
                 </div>
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Min Quantity</label>
+                  <label className="block text-[#94A3B8] text-sm mb-2">Min ilość</label>
                   <input
                     type="number"
                     value={minQuantity}
@@ -458,7 +458,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   />
                 </div>
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Price</label>
+                  <label className="block text-[#94A3B8] text-sm mb-2">Cena</label>
                   <input
                     type="number"
                     step="0.01"
@@ -480,7 +480,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60"
                 >
-                  {isSubmitting ? 'Updating...' : 'Update'}
+                  {isSubmitting ? 'Aktualizuję...' : 'Zapisz'}
                 </button>
                 <button
                   type="button"
@@ -488,7 +488,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
                 >
-                  Cancel
+                  Anuluj
                 </button>
               </div>
             </form>
@@ -501,7 +501,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-xl w-full">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white">Reserve Part - {selectedPart.name}</h3>
+              <h3 className="text-white">Zarezerwuj część - {selectedPart.name}</h3>
               <button onClick={() => { setShowReserveModal(false); setSelectedPart(null); }} className="text-[#94A3B8] hover:text-white">✕</button>
             </div>
             <form className="space-y-4" onSubmit={handleReserve}>
@@ -521,7 +521,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                 </select>
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Quantity to reserve</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Ilość do rezerwacji</label>
                 <input
                   type="number"
                   value={reserveQty}
@@ -541,7 +541,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60"
                 >
-                  {isSubmitting ? 'Reserving...' : 'Reserve'}
+                  {isSubmitting ? 'Rezerwuję...' : 'Zarezerwuj'}
                 </button>
                 <button
                   type="button"
@@ -549,7 +549,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
                 >
-                  Cancel
+                  Anuluj
                 </button>
               </div>
             </form>
@@ -567,7 +567,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
             </div>
             <form className="space-y-4" onSubmit={handleConsume}>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Quantity to consume</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Ilość do zużycia</label>
                 <input
                   type="number"
                   value={consumeQty}
@@ -587,7 +587,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-gradient-to-r from-[#FF6B35] to-[#FF944D] text-white rounded-lg hover:scale-105 transition-transform disabled:opacity-60"
                 >
-                  {isSubmitting ? 'Processing...' : 'Consume'}
+                  {isSubmitting ? 'Przetwarzam...' : 'Zużyj'}
                 </button>
                 <button
                   type="button"
@@ -595,7 +595,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
                 >
-                  Cancel
+                  Anuluj
                 </button>
               </div>
             </form>

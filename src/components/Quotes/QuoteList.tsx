@@ -18,15 +18,15 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'draft':
-        return { icon: Clock, bg: 'bg-[#64748B]/10', text: 'text-[#64748B]', border: 'border-[#64748B]/20' };
+        return { icon: Clock, bg: 'bg-[#64748B]/10', text: 'text-[#64748B]', border: 'border-[#64748B]/20', label: 'Szkic' };
       case 'sent':
-        return { icon: Send, bg: 'bg-[#00D9FF]/10', text: 'text-[#00D9FF]', border: 'border-[#00D9FF]/20' };
+        return { icon: Send, bg: 'bg-[#00D9FF]/10', text: 'text-[#00D9FF]', border: 'border-[#00D9FF]/20', label: 'Wysłany' };
       case 'accepted':
-        return { icon: CheckCircle, bg: 'bg-[#00FF88]/10', text: 'text-[#00FF88]', border: 'border-[#00FF88]/20' };
+        return { icon: CheckCircle, bg: 'bg-[#00FF88]/10', text: 'text-[#00FF88]', border: 'border-[#00FF88]/20', label: 'Zaakceptowany' };
       case 'rejected':
-        return { icon: XCircle, bg: 'bg-[#FF6B35]/10', text: 'text-[#FF6B35]', border: 'border-[#FF6B35]/20' };
+        return { icon: XCircle, bg: 'bg-[#FF6B35]/10', text: 'text-[#FF6B35]', border: 'border-[#FF6B35]/20', label: 'Odrzucony' };
       default:
-        return { icon: FileText, bg: 'bg-[#64748B]/10', text: 'text-[#64748B]', border: 'border-[#64748B]/20' };
+        return { icon: FileText, bg: 'bg-[#64748B]/10', text: 'text-[#64748B]', border: 'border-[#64748B]/20', label: 'Nieznany' };
     }
   };
 
@@ -43,25 +43,25 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-white text-2xl mb-1">Quotes & Estimates</h1>
-          <p className="text-[#94A3B8]">Manage repair quotes and pricing</p>
+          <h1 className="text-white text-2xl mb-1">Kosztorysy</h1>
+          <p className="text-[#94A3B8]">Zarządzaj wycenami napraw</p>
         </div>
         <button
           onClick={() => onNavigate('quote-detail', 'new')}
           className="px-6 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          New Quote
+          Nowy kosztorys
         </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: 'Total Quotes', value: stats.total, color: 'from-[#00D9FF] to-[#0099CC]' },
-          { label: 'Pending', value: stats.sent, color: 'from-[#FFB800] to-[#CC9400]' },
-          { label: 'Accepted', value: stats.accepted, color: 'from-[#00FF88] to-[#00CC6A]' },
-          { label: 'Rejected', value: stats.rejected, color: 'from-[#FF6B35] to-[#CC5529]' },
+          { label: 'Wszystkie', value: stats.total, color: 'from-[#00D9FF] to-[#0099CC]' },
+          { label: 'Wysłane', value: stats.sent, color: 'from-[#FFB800] to-[#CC9400]' },
+          { label: 'Zaakceptowane', value: stats.accepted, color: 'from-[#00FF88] to-[#00CC6A]' },
+          { label: 'Odrzucone', value: stats.rejected, color: 'from-[#FF6B35] to-[#CC5529]' },
         ].map((stat, index) => (
           <div key={index} className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <p className="text-[#94A3B8] text-sm mb-2">{stat.label}</p>
@@ -76,7 +76,7 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" />
           <input
             type="text"
-            placeholder="Search by quote ID, ticket, or customer..."
+            placeholder="Szukaj po numerze kosztorysu, zgłoszeniu lub kliencie..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
@@ -110,7 +110,7 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs border flex items-center gap-1 ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
                   <StatusIcon className="w-3 h-3" />
-                  {quote.status}
+                  {statusConfig.label}
                 </span>
               </div>
               <div className="space-y-2 mb-4">
