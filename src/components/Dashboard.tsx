@@ -1,5 +1,3 @@
-'use client';
-
 import { 
   Ticket, 
   AlertCircle, 
@@ -12,51 +10,17 @@ import {
   ArrowRight
 } from 'lucide-react';
 import type { View } from '@/types/view';
-import SLAWidget from '@/components/SLA/SLAWidget';
-
-export interface DashboardStats {
-  total: number;
-  active: number;
-  risk: number;    
-  doneToday: number;
-}
 
 interface DashboardProps {
-  onNavigate: (view: View, id?: string) => void;
-  statsData: DashboardStats;
+  onNavigate: (view: View) => void;
 }
 
-export function Dashboard({ onNavigate, statsData }: DashboardProps) { 
-  
+export function Dashboard({ onNavigate }: DashboardProps) {
   const stats = [
-    { 
-      label: 'Wszystkie zlecenia', 
-      value: statsData.total.toString(), 
-      change: '', 
-      icon: Ticket, 
-      color: 'from-[#00FF88] to-[#00CC6A]' 
-    },
-    { 
-      label: 'W trakcie', 
-      value: statsData.active.toString(), 
-      change: '', 
-      icon: Clock, 
-      color: 'from-[#00D9FF] to-[#0099CC]' 
-    },
-    { 
-      label: 'Zagrożone SLA',
-      value: statsData.risk.toString(), 
-      change: '', 
-      icon: AlertCircle, 
-      color: 'from-[#FF6B35] to-[#CC5529]'
-    },
-    { 
-      label: 'Zakończone dzisiaj', 
-      value: statsData.doneToday.toString(), 
-      change: '', 
-      icon: CheckCircle, 
-      color: 'from-[#A78BFA] to-[#8B5CF6]' 
-    },
+    { label: 'Wszystkie zlecenia', value: '247', change: '+12%', icon: Ticket, color: 'from-[#00FF88] to-[#00CC6A]' },
+    { label: 'W trakcie', value: '42', change: '+5%', icon: Clock, color: 'from-[#00D9FF] to-[#0099CC]' },
+    { label: 'Uwagi SLA', value: '8', change: '-3%', icon: AlertCircle, color: 'from-[#FF6B35] to-[#CC5529]' },
+    { label: 'Zakończone dzisiaj', value: '15', change: '+8%', icon: CheckCircle, color: 'from-[#A78BFA] to-[#8B5CF6]' },
   ];
 
   const recentTickets = [
@@ -65,6 +29,12 @@ export function Dashboard({ onNavigate, statsData }: DashboardProps) {
     { id: 'TK-2024-1245', customer: 'Johny Bravo', device: 'Dell XPS 15', status: 'testowanie', priority: 'low', sla: 'standard' },
     { id: 'TK-2024-1244', customer: 'Seba Kowalski', device: 'Samsung Galaxy S23', status: 'gotowy', priority: 'high', sla: 'vip' },
     { id: 'TK-2024-1243', customer: 'Robert Kowalski', device: 'HP Pavilion', status: 'nowe', priority: 'medium', sla: 'gwarancja' },
+  ];
+
+  const upcomingDeadlines = [
+    { id: 'TK-2024-1240', customer: 'Jan Kowalski', deadline: '2 godziny', status: 'critical' },
+    { id: 'TK-2024-1238', customer: 'Johny Bravo', deadline: '4 godziny', status: 'warning' },
+    { id: 'TK-2024-1235', customer: 'Seba Kowalski', deadline: '8 godzin', status: 'ok' },
   ];
 
   const getStatusColor = (status: string) => {
@@ -87,6 +57,15 @@ export function Dashboard({ onNavigate, statsData }: DashboardProps) {
     }
   };
 
+  const getDeadlineColor = (status: string) => {
+    switch (status) {
+      case 'critical': return 'text-[#FF6B35]';
+      case 'warning': return 'text-[#FFB800]';
+      case 'ok': return 'text-[#00FF88]';
+      default: return 'text-[#64748B]';
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -100,6 +79,8 @@ export function Dashboard({ onNavigate, statsData }: DashboardProps) {
                   <p className="text-[#94A3B8] text-sm mb-2">{stat.label}</p>
                   <h3 className="text-white text-3xl mb-1">{stat.value}</h3>
                   <div className="flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4 text-[#00FF88]" />
+                    <span className="text-[#00FF88] text-sm">{stat.change}</span>
                   </div>
                 </div>
                 <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
@@ -186,8 +167,35 @@ export function Dashboard({ onNavigate, statsData }: DashboardProps) {
           </div>
         </div>
 
-        <div className="h-full">
-          <SLAWidget onNavigate={onNavigate} />
+        {/* Upcoming Deadlines */}
+        <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-white">Terminy SLA</h3>
+            <Clock className="w-5 h-5 text-[#FFB800]" />
+          </div>
+          <div className="space-y-3">
+            {upcomingDeadlines.map((item) => (
+              <div
+                key={item.id}
+                className="bg-[#121B2D] rounded-lg p-4 border border-[#1A2642]"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white text-sm">{item.id}</span>
+                  <AlertCircle className={`w-4 h-4 ${getDeadlineColor(item.status)}`} />
+                </div>
+                <p className="text-[#94A3B8] text-sm mb-2">{item.customer}</p>
+                <p className={`text-sm ${getDeadlineColor(item.status)}`}>
+                  {item.deadline} do końca
+                </p>
+              </div>
+            ))}
+          </div>
+          <button 
+            onClick={() => onNavigate('sla')}
+            className="w-full mt-4 px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#00FF88] hover:bg-[#00FF88]/5 transition-colors text-sm"
+          >
+            Sprawdź wszystkie SLA
+          </button>
         </div>
       </div>
     </div>

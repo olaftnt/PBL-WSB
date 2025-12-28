@@ -1,72 +1,15 @@
-import { prisma } from "@/lib/prisma";
-import { SLATYPE } from "@prisma/client";
-import { addHours, isPast, isBefore, add } from "date-fns";
-import DashboardClient from "./DashboardClient";
+'use client';
 
-// Konfiguracja SLA
-const SLA_LIMITS = {
-  [SLATYPE.VIP]: { hours: 12 },
-  [SLATYPE.EXPRESS]: { hours: 24 },
-  [SLATYPE.STANDARD]: { days: 5 },
-  [SLATYPE.WARRANTY]: { days: 7 },
-};
+import { useRouter } from 'next/navigation';
+import { viewToPath } from '@/lib/viewRouter';
+import { Dashboard } from '@/components/Dashboard';
 
-export default async function DashboardPage() {
-  // Wszystkie zgłoszenia
-  const allTickets = await prisma.ticket.findMany({
-    select: {
-      id: true,
-      status: true,
-      slaType: true,
-      createdAt: true,
-      updatedAt: true,
-    }
-  });
+export default function Page() {
+  const router = useRouter();
 
-  const now = new Date();
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  let activeCount = 0;
-  let riskCount = 0;
-  let doneTodayCount = 0;
-
-  allTickets.forEach((ticket) => {
-    // Zakończone dzisiaj
-    if (ticket.status === 'DONE') {
-      if (ticket.updatedAt >= startOfToday) {
-        doneTodayCount++;
-      }
-    }
-
-    // Aktywne i Zagrożone
-    if (ticket.status !== "DONE" && ticket.status !== "CANCELED") {
-      activeCount++;
-
-      const duration = SLA_LIMITS[ticket.slaType] || { days: 5 };
-      const deadline = add(ticket.createdAt, duration);
-      const isBreached = isPast(deadline);
-      
-      let warningThresholdHours = 4;
-      if (ticket.slaType === 'STANDARD') warningThresholdHours = 6;
-      else if (ticket.slaType === 'WARRANTY') warningThresholdHours = 12;
-      
-      const warningTime = addHours(now, warningThresholdHours);
-      
-      const isAtRisk = !isBreached && isBefore(deadline, warningTime);
-
-      if (isAtRisk) {
-        riskCount++;
-      }
-    }
-  });
-
-  const dashboardStats = {
-    total: allTickets.length,
-    active: activeCount,
-    risk: riskCount,
-    doneToday: doneTodayCount
+  const onNavigate = (view: any, id?: string) => {
+    router.push(viewToPath(view, id));
   };
 
-  return <DashboardClient stats={dashboardStats} />;
+  return <Dashboard onNavigate={onNavigate} />;
 }

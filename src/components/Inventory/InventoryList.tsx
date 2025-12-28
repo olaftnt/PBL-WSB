@@ -262,7 +262,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                       <span className="text-[#64748B] text-sm">{part.reserved}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[#00FF88]">${part.price.toFixed(2)}</span>
+                      <span className="text-[#00FF88]">{part.price.toFixed(2)} zł</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs border ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border}`}>

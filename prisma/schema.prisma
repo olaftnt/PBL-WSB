@@ -35,6 +35,13 @@ enum TicketEventType {
   NOTE
 }
 
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
 model Customer {
   id        String   @id @default(cuid())
   name      String
@@ -45,6 +52,7 @@ model Customer {
 
   devices Device[]
   tickets  Ticket[]
+  quotes   Quote[]
 }
 
 model Device {
@@ -59,6 +67,7 @@ model Device {
 
   customer Customer @relation(fields: [customerId], references: [id])
   tickets  Ticket[]
+  quotes   Quote[]
 }
 
 model Ticket {
@@ -85,6 +94,7 @@ model Ticket {
 
   events TicketEvent[]
   partReservations PartReservation[]
+  quotes Quote[]
 
   @@index([customerId])
   @@index([deviceId])
@@ -120,6 +130,7 @@ model Part {
   updatedAt    DateTime @updatedAt
 
   reservations PartReservation[]
+  quoteItems   QuoteItem[]
 
   @@index([sku])
   @@index([quantity])
@@ -140,3 +151,48 @@ model PartReservation {
   @@index([ticketId])
   @@index([createdAt])
 }
+
+model Quote {
+  id         String       @id @default(cuid())
+  number     String       @unique
+  ticketId   String
+  customerId String
+  deviceId   String?
+  status     QuoteStatus  @default(DRAFT)
+  laborHours Decimal      @default(0)
+  laborRate  Decimal      @default(0)
+  vatRate    Decimal      @default(23)
+  notes      String?
+  totalNet   Decimal      @default(0)
+  totalVat   Decimal      @default(0)
+  totalGross Decimal      @default(0)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  ticket   Ticket   @relation(fields: [ticketId], references: [id])
+  device   Device?  @relation(fields: [deviceId], references: [id])
+  items    QuoteItem[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([ticketId])
+  @@index([createdAt])
+}
+
+model QuoteItem {
+  id        String   @id @default(cuid())
+  quoteId   String
+  partId    String?
+  description String
+  quantity  Int
+  unitPrice Decimal
+  total     Decimal
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  part  Part? @relation(fields: [partId], references: [id])
+
+  @@index([quoteId])
+  @@index([partId])
+}
+

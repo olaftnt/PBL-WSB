@@ -1,41 +1,175 @@
-import { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Send, CheckCircle, Download } from 'lucide-react';
-import type { View } from '@/types/view';
+'use client';
+
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Plus, Trash2, CheckCircle, Download, Clipboard, XCircle } from 'lucide-react';
+import type { QuoteDetailData, PartOption, QuoteItemInput, TicketOption, CustomerOption } from '@/types/quote';
+import { saveQuote, updateQuoteStatus, deleteQuote } from '@/app/(app)/_actions/quotes';
+import type { QuoteStatus } from '@prisma/client';
 
 interface QuoteDetailProps {
-  quoteId: string;
-  onNavigate: (view: View) => void;
+  initialQuote: QuoteDetailData;
+  parts: PartOption[];
+  tickets: TicketOption[];
 }
 
-export function QuoteDetail({ quoteId, onNavigate }: QuoteDetailProps) {
-  const [laborHours, setLaborHours] = useState(2);
-  const [laborRate] = useState(50);
-  const [parts, setParts] = useState([
-    { id: '1', name: 'iPhone 14 Pro Screen', sku: 'SCR-IP14-001', quantity: 1, price: 199.99 },
-    { id: '2', name: 'Screen Adhesive', sku: 'ADH-GEN-001', quantity: 1, price: 9.99 },
-  ]);
+export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: QuoteDetailProps) {
+  const router = useRouter();
+  const [laborHours, setLaborHours] = useState(initialQuote.laborHours);
+  const [laborRate, setLaborRate] = useState(initialQuote.laborRate);
+  const [vatRate, setVatRate] = useState(initialQuote.vatRate);
+  const [ticketId, setTicketId] = useState(initialQuote.ticketId);
+  const [customerId, setCustomerId] = useState(initialQuote.customerId);
+  const [items, setItems] = useState<QuoteItemInput[]>(
+    initialQuote.items.map((i) => ({
+      id: i.id,
+      partId: i.partId,
+      description: i.description,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+    })),
+  );
+  const isNew = initialQuote.id === 'new';
+  const [status, setStatus] = useState<QuoteStatus>(initialQuote.status);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [lastAction, setLastAction] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const isNew = quoteId === 'new';
-  const status = isNew ? 'draft' : 'sent';
+  const laborCost = useMemo(() => laborHours * laborRate, [laborHours, laborRate]);
+  const partsCost = useMemo(() => items.reduce((acc, part) => acc + part.quantity * part.unitPrice, 0), [items]);
+  const netTotal = useMemo(() => laborCost + partsCost, [laborCost, partsCost]);
+  const vatAmount = useMemo(() => netTotal * (vatRate / 100), [netTotal, vatRate]);
+  const grossTotal = useMemo(() => netTotal + vatAmount, [netTotal, vatAmount]);
 
-  const laborCost = laborHours * laborRate;
-  const partsCost = parts.reduce((acc, part) => acc + (part.quantity * part.price), 0);
-  const subtotal = laborCost + partsCost;
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + tax;
+  const statusConfig = useMemo(() => {
+    switch (status) {
+      case 'SENT':
+        return { label: 'Wysłany', classes: 'bg-[#00D9FF]/10 text-[#00D9FF] border-[#00D9FF]/30' };
+      case 'ACCEPTED':
+        return { label: 'Zaakceptowany', classes: 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/30' };
+      case 'REJECTED':
+        return { label: 'Odrzucony', classes: 'bg-[#FF6B35]/10 text-[#FF6B35] border-[#FF6B35]/30' };
+      default:
+        return { label: 'Szkic', classes: 'bg-[#64748B]/10 text-[#94A3B8] border-[#64748B]/30' };
+    }
+  }, [status]);
 
   const handleAddPart = () => {
-    setParts([...parts, { 
-      id: Date.now().toString(), 
-      name: '', 
-      sku: '', 
-      quantity: 1, 
-      price: 0 
-    }]);
+    setItems([
+      ...items,
+      {
+        id: Date.now().toString(),
+        partId: undefined,
+        description: '',
+        quantity: 1,
+        unitPrice: 0,
+      },
+    ]);
   };
 
   const handleRemovePart = (id: string) => {
-    setParts(parts.filter(p => p.id !== id));
+    setItems(items.filter((p) => p.id !== id));
+  };
+
+  const handleSelectPart = (rowId: string, selectedId: string) => {
+    const selected = availableParts.find((p) => p.id === selectedId);
+    setItems(
+      items.map((p) =>
+        p.id === rowId
+          ? {
+              ...p,
+              partId: selected?.id,
+              description: selected?.name ?? '',
+              unitPrice: selected?.price ?? p.unitPrice,
+            }
+          : p,
+      ),
+    );
+  };
+
+  const handleSave = async (saveAs: QuoteStatus) => {
+    setSaving(true);
+    setLastAction(null);
+    try {
+      await saveQuote({
+        id: isNew ? undefined : initialQuote.id,
+        ticketId: ticketId || '',
+        customerId: customerId || '',
+        deviceId: initialQuote.deviceId || null,
+        laborHours,
+        laborRate,
+        vatRate,
+        notes: initialQuote.notes ?? '',
+        items: items.map((i) => ({
+          id: i.id,
+          partId: i.partId || null,
+          description: i.description || 'Pozycja',
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+        })),
+        status: saveAs,
+      });
+      setStatus(saveAs);
+      setLastAction(saveAs === 'DRAFT' ? 'Zapisano jako szkic.' : 'Zapisano kosztorys.');
+      if (isNew && typeof window !== 'undefined') {
+        router.push('/quotes'); // odśwież listę; unikamy wielokrotnego tworzenia na "new"
+      } else {
+        router.refresh();
+      }
+    } catch (err: any) {
+      setLastAction(err?.message ?? 'Nie udało się zapisać kosztorysu.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSendToCustomer = async () => {
+    // removed "send to customer" action per request
+  };
+
+  const handleDecision = async (decision: QuoteStatus) => {
+    try {
+      await updateQuoteStatus(initialQuote.id, decision);
+      setStatus(decision);
+      setLastAction(
+        decision === 'ACCEPTED'
+          ? 'Kosztorys zaakceptowany online.'
+          : 'Kosztorys został odrzucony.',
+      );
+    } catch (err: any) {
+      setLastAction(err?.message ?? 'Nie udało się zaktualizować statusu.');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (isNew) {
+      setLastAction('Kosztorys nie zapisany — brak czego usuwać.');
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteQuote(initialQuote.id);
+      setLastAction('Kosztorys usunięty.');
+      // opcjonalnie nawigacja wstecz
+      if (typeof window !== 'undefined') {
+        router.push('/quotes');
+      }
+    } catch (err: any) {
+      setLastAction(err?.message ?? 'Nie udało się usunąć kosztorysu.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const copyShareLink = async () => {
+    if (!shareLink || typeof navigator === 'undefined') return;
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setLastAction('Link do akceptacji skopiowany.');
+    } catch (error) {
+      console.error('Clipboard copy failed', error);
+    }
   };
 
   return (
@@ -44,28 +178,24 @@ export function QuoteDetail({ quoteId, onNavigate }: QuoteDetailProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => onNavigate('quotes')}
+            onClick={() => history.back()}
             className="p-2 text-[#94A3B8] hover:text-white transition-colors"
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div>
             <h1 className="text-white text-2xl mb-1">
-              {isNew ? 'New Quote' : `Quote ${quoteId}`}
+              {isNew ? 'New Quote' : `Quote ${initialQuote.number}`}
             </h1>
             <p className="text-[#94A3B8]">{isNew ? 'Create repair estimate' : 'Quote Details'}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
           {!isNew && (
             <>
               <button className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2">
                 <Download className="w-4 h-4" />
                 Download PDF
-              </button>
-              <button className="px-4 py-2 bg-gradient-to-r from-[#00D9FF] to-[#0099CC] text-white rounded-lg hover:scale-105 transition-transform flex items-center gap-2">
-                <Send className="w-4 h-4" />
-                Send to Customer
               </button>
             </>
           )}
@@ -75,27 +205,42 @@ export function QuoteDetail({ quoteId, onNavigate }: QuoteDetailProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quote Builder */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Customer & Ticket Info */}
-          <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Quote Information</h3>
-            <div className="grid grid-cols-2 gap-4">
+          {/* Info */}
+          <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg space-y-4">
+            <h3 className="text-white mb-2">Quote Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Ticket Number</label>
-                <input
-                  type="text"
-                  defaultValue="TK-2024-1247"
+                <label className="block text-[#94A3B8] text-sm mb-2">Ticket</label>
+                <select
+                  value={ticketId}
+                  onChange={(e) => {
+                    const newTicketId = e.target.value;
+                    setTicketId(newTicketId);
+                    const found = tickets.find((t) => t.id === newTicketId);
+                    if (found?.customerId) {
+                      setCustomerId(found.customerId);
+                    }
+                  }}
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
-                />
+                >
+                  <option value="">Wybierz ticket</option>
+                  {tickets.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.number}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-[#94A3B8] text-sm mb-2">Customer</label>
-                <input
-                  type="text"
-                  defaultValue="John Smith"
-                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
-                />
+                <div className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white">
+                  {tickets.find((t) => t.id === ticketId)?.customerName || initialQuote.customerName || '—'}
+                </div>
               </div>
             </div>
+            {initialQuote.deviceName && (
+              <p className="text-sm text-[#94A3B8]">Device: {initialQuote.deviceName}</p>
+            )}
           </div>
 
           {/* Labor */}
@@ -108,23 +253,23 @@ export function QuoteDetail({ quoteId, onNavigate }: QuoteDetailProps) {
                   type="number"
                   step="0.5"
                   value={laborHours}
-                  onChange={(e) => setLaborHours(parseFloat(e.target.value))}
+                  onChange={(e) => setLaborHours(parseFloat(e.target.value) || 0)}
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Rate ($/hr)</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Rate (PLN/h)</label>
                 <input
                   type="number"
                   value={laborRate}
-                  disabled
-                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8]"
+                  onChange={(e) => setLaborRate(parseFloat(e.target.value) || 0)}
+                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
                 />
               </div>
               <div>
                 <label className="block text-[#94A3B8] text-sm mb-2">Total</label>
                 <div className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#00FF88]">
-                  ${laborCost.toFixed(2)}
+                  {laborCost.toFixed(2)} zł
                 </div>
               </div>
             </div>
@@ -143,28 +288,45 @@ export function QuoteDetail({ quoteId, onNavigate }: QuoteDetailProps) {
               </button>
             </div>
             <div className="space-y-3">
-              {parts.map((part) => (
+              {items.map((part) => (
                 <div key={part.id} className="bg-[#121B2D] rounded-lg p-4 border border-[#1A2642]">
                   <div className="grid grid-cols-12 gap-3 items-end">
-                    <div className="col-span-5">
+                    <div className="col-span-4">
+                      <label className="block text-[#94A3B8] text-xs mb-2">Magazyn</label>
+                      <select
+                        value={part.partId ?? ''}
+                        onChange={(e) => handleSelectPart(part.id, e.target.value)}
+                        className="w-full px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-white text-sm focus:outline-none focus:border-[#00FF88] transition-colors"
+                      >
+                        <option value="">Wybierz z magazynu (opcjonalnie)</option>
+                        {availableParts.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.sku} · {p.name} ({p.quantity - p.reserved} szt.)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-3">
                       <label className="block text-[#94A3B8] text-xs mb-2">Part Name</label>
                       <input
                         type="text"
-                        value={part.name}
+                        value={part.description}
                         onChange={(e) => {
-                          setParts(parts.map(p => p.id === part.id ? { ...p, name: e.target.value } : p));
+                          setItems(items.map((p) => (p.id === part.id ? { ...p, description: e.target.value } : p)));
                         }}
                         placeholder="Select or enter part..."
                         className="w-full px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-white text-sm focus:outline-none focus:border-[#00FF88] transition-colors"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                       <label className="block text-[#94A3B8] text-xs mb-2">Qty</label>
                       <input
                         type="number"
                         value={part.quantity}
+                        min={1}
                         onChange={(e) => {
-                          setParts(parts.map(p => p.id === part.id ? { ...p, quantity: parseInt(e.target.value) } : p));
+                          const qty = parseInt(e.target.value) || 0;
+                          setItems(items.map((p) => (p.id === part.id ? { ...p, quantity: qty } : p)));
                         }}
                         className="w-full px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-white text-sm focus:outline-none focus:border-[#00FF88] transition-colors"
                       />
@@ -174,17 +336,17 @@ export function QuoteDetail({ quoteId, onNavigate }: QuoteDetailProps) {
                       <input
                         type="number"
                         step="0.01"
-                        value={part.price}
+                        value={part.unitPrice}
                         onChange={(e) => {
-                          setParts(parts.map(p => p.id === part.id ? { ...p, price: parseFloat(e.target.value) } : p));
+                          setItems(items.map((p) => (p.id === part.id ? { ...p, unitPrice: parseFloat(e.target.value) || 0 } : p)));
                         }}
                         className="w-full px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-white text-sm focus:outline-none focus:border-[#00FF88] transition-colors"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                       <label className="block text-[#94A3B8] text-xs mb-2">Total</label>
                       <div className="px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-[#00FF88] text-sm">
-                        ${(part.quantity * part.price).toFixed(2)}
+                        {(part.quantity * part.unitPrice).toFixed(2)} zł
                       </div>
                     </div>
                     <div className="col-span-1">
@@ -207,69 +369,98 @@ export function QuoteDetail({ quoteId, onNavigate }: QuoteDetailProps) {
             <textarea
               placeholder="Add any additional notes or terms for the customer..."
               rows={4}
+              defaultValue={initialQuote.notes ?? ''}
               className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors resize-none"
             />
           </div>
         </div>
 
-        {/* Quote Summary */}
+        {/* Summary */}
         <div className="space-y-6">
-          <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg sticky top-6">
-            <h3 className="text-white mb-6">Quote Summary</h3>
-            
-            <div className="space-y-4 mb-6">
+          <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg sticky top-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white">Podsumowanie</h3>
+              <span className={`px-3 py-1 rounded-full text-xs border ${statusConfig.classes}`}>
+                {statusConfig.label}
+              </span>
+            </div>
+
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[#94A3B8]">Labor</span>
-                <span className="text-white">${laborCost.toFixed(2)}</span>
+                <span className="text-[#94A3B8]">Robocizna</span>
+                <span className="text-white">{laborCost.toFixed(2)} zł</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#94A3B8]">Parts</span>
-                <span className="text-white">${partsCost.toFixed(2)}</span>
-              </div>
-              <div className="h-px bg-[#1A2642]"></div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94A3B8]">Subtotal</span>
-                <span className="text-white">${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94A3B8]">Tax (8%)</span>
-                <span className="text-white">${tax.toFixed(2)}</span>
+                <span className="text-[#94A3B8]">Części</span>
+                <span className="text-white">{partsCost.toFixed(2)} zł</span>
               </div>
               <div className="h-px bg-[#1A2642]"></div>
               <div className="flex items-center justify-between">
-                <span className="text-white">Total</span>
-                <span className="text-[#00FF88] text-2xl">${total.toFixed(2)}</span>
+                <span className="text-[#94A3B8]">Netto</span>
+                <span className="text-white">{netTotal.toFixed(2)} zł</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[#94A3B8]">VAT (%)</span>
+                <input
+                  type="number"
+                  value={vatRate}
+                  onChange={(e) => setVatRate(parseFloat(e.target.value) || 0)}
+                  className="w-24 px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-white text-sm focus:outline-none focus:border-[#00FF88] transition-colors"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#94A3B8]">VAT kwota</span>
+                <span className="text-white">{vatAmount.toFixed(2)} zł</span>
+              </div>
+              <div className="h-px bg-[#1A2642]"></div>
+              <div className="flex items-center justify-between">
+                <span className="text-white">Brutto</span>
+                <span className="text-[#00FF88] text-2xl">{grossTotal.toFixed(2)} zł</span>
               </div>
             </div>
 
             <div className="space-y-3">
-              <button className="w-full py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform flex items-center justify-center gap-2">
-                <CheckCircle className="w-5 h-5" />
-                Save Quote
+              <button
+                onClick={() => handleSave('DRAFT')}
+                disabled={saving}
+                className="w-full py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors disabled:opacity-60"
+              >
+                {saving ? 'Saving...' : 'Zapisz jako szkic'}
               </button>
-              <button className="w-full py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors">
-                Save as Draft
+              <button
+                onClick={() => handleSave('SENT')}
+                disabled={saving}
+                className="w-full py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-5 h-5" />
+                {saving ? 'Saving...' : 'Zapisz'}
+              </button>
+              <button
+                onClick={() => handleDecision('ACCEPTED')}
+                disabled={isNew || saving}
+                className="w-full py-3 bg-[#00FF88]/10 border border-[#00FF88]/30 text-[#00FF88] rounded-lg hover:bg-[#00FF88]/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Oznacz jako zaakceptowany
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full py-3 bg-[#FF6B35]/10 border border-[#FF6B35]/30 text-[#FF6B35] rounded-lg hover:bg-[#FF6B35]/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <Trash2 className="w-4 h-4" />
+                {deleting ? 'Usuwanie...' : 'Usuń'}
               </button>
             </div>
+
+            {lastAction && (
+              <div className="rounded-lg border border-[#1A2642] bg-[#121B2D] px-3 py-2 text-xs text-[#94A3B8]">
+                {lastAction}
+              </div>
+            )}
           </div>
 
-          {!isNew && status === 'sent' && (
-            <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-              <h3 className="text-white mb-4">Status</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 px-4 py-3 bg-[#00D9FF]/10 border border-[#00D9FF]/20 rounded-lg">
-                  <Send className="w-5 h-5 text-[#00D9FF]" />
-                  <div>
-                    <p className="text-[#00D9FF] text-sm">Sent to Customer</p>
-                    <p className="text-[#64748B] text-xs">2024-12-09 14:30</p>
-                  </div>
-                </div>
-                <p className="text-[#94A3B8] text-sm">
-                  Awaiting customer response...
-                </p>
-              </div>
-            </div>
-          )}
+          {/* Status/wysłka sekcja usunięta zgodnie z wymaganiem */}
         </div>
       </div>
     </div>

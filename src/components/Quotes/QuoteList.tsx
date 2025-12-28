@@ -1,21 +1,17 @@
+ 'use client';
+
 import { useState } from 'react';
 import { Plus, Search, FileText, Send, CheckCircle, XCircle, Clock } from 'lucide-react';
 import type { View } from '@/types/view';
+import type { QuoteListItem } from '@/types/quote';
 
 interface QuoteListProps {
   onNavigate: (view: View, id?: string) => void;
+  quotes: QuoteListItem[];
+  stats: { total: number; sent: number; accepted: number; rejected: number };
 }
 
-const mockQuotes = [
-  { id: 'QT-2024-1247', ticket: 'TK-2024-1247', customer: 'John Smith', device: 'MacBook Pro 16"', total: 299.00, status: 'draft', created: '2024-12-09' },
-  { id: 'QT-2024-1246', ticket: 'TK-2024-1246', customer: 'Sarah Johnson', device: 'iPhone 14 Pro', total: 199.00, status: 'sent', created: '2024-12-09' },
-  { id: 'QT-2024-1245', ticket: 'TK-2024-1245', customer: 'Mike Wilson', device: 'Dell XPS 15', total: 449.00, status: 'accepted', created: '2024-12-08' },
-  { id: 'QT-2024-1244', ticket: 'TK-2024-1244', customer: 'Emma Davis', device: 'Samsung Galaxy S23', total: 179.00, status: 'accepted', created: '2024-12-08' },
-  { id: 'QT-2024-1243', ticket: 'TK-2024-1243', customer: 'Robert Brown', device: 'HP Pavilion', total: 89.00, status: 'rejected', created: '2024-12-08' },
-  { id: 'QT-2024-1242', ticket: 'TK-2024-1242', customer: 'Lisa Anderson', device: 'PlayStation 5', total: 149.00, status: 'sent', created: '2024-12-07' },
-];
-
-export function QuoteList({ onNavigate }: QuoteListProps) {
+export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -34,12 +30,12 @@ export function QuoteList({ onNavigate }: QuoteListProps) {
     }
   };
 
-  const filteredQuotes = mockQuotes.filter(quote =>
+  const filteredQuotes = quotes.filter((quote) =>
     (statusFilter === 'all' || quote.status === statusFilter) &&
     (searchQuery === '' ||
-      quote.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      quote.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      quote.ticket.toLowerCase().includes(searchQuery.toLowerCase()))
+      quote.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      quote.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      quote.ticketNumber.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -62,10 +58,10 @@ export function QuoteList({ onNavigate }: QuoteListProps) {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: 'Total Quotes', value: mockQuotes.length, color: 'from-[#00D9FF] to-[#0099CC]' },
-          { label: 'Pending', value: mockQuotes.filter(q => q.status === 'sent').length, color: 'from-[#FFB800] to-[#CC9400]' },
-          { label: 'Accepted', value: mockQuotes.filter(q => q.status === 'accepted').length, color: 'from-[#00FF88] to-[#00CC6A]' },
-          { label: 'Rejected', value: mockQuotes.filter(q => q.status === 'rejected').length, color: 'from-[#FF6B35] to-[#CC5529]' },
+          { label: 'Total Quotes', value: stats.total, color: 'from-[#00D9FF] to-[#0099CC]' },
+          { label: 'Pending', value: stats.sent, color: 'from-[#FFB800] to-[#CC9400]' },
+          { label: 'Accepted', value: stats.accepted, color: 'from-[#00FF88] to-[#00CC6A]' },
+          { label: 'Rejected', value: stats.rejected, color: 'from-[#FF6B35] to-[#CC5529]' },
         ].map((stat, index) => (
           <div key={index} className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <p className="text-[#94A3B8] text-sm mb-2">{stat.label}</p>
@@ -76,28 +72,15 @@ export function QuoteList({ onNavigate }: QuoteListProps) {
 
       {/* Filters */}
       <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" />
-            <input
-              type="text"
-              placeholder="Search by quote ID, ticket, or customer..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
-          >
-            <option value="all">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="sent">Sent</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-          </select>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" />
+          <input
+            type="text"
+            placeholder="Search by quote ID, ticket, or customer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
+          />
         </div>
       </div>
 
@@ -118,10 +101,11 @@ export function QuoteList({ onNavigate }: QuoteListProps) {
                     <FileText className="w-5 h-5 text-white" />
                   </div>
                   <div>
+                    <p className="text-[#94A3B8] text-sm">{quote.ticketNumber}</p>
                     <h3 className="text-white mb-1 group-hover:text-[#00FF88] transition-colors">
-                      {quote.id}
+                      {quote.customerName}
                     </h3>
-                    <p className="text-[#64748B] text-sm">{quote.ticket}</p>
+                    <p className="text-[#64748B] text-xs">{quote.number}</p>
                   </div>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs border flex items-center gap-1 ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
@@ -130,12 +114,11 @@ export function QuoteList({ onNavigate }: QuoteListProps) {
                 </span>
               </div>
               <div className="space-y-2 mb-4">
-                <p className="text-[#94A3B8] text-sm">{quote.customer}</p>
-                <p className="text-[#64748B] text-sm">{quote.device}</p>
+                <p className="text-[#64748B] text-sm">{quote.deviceName}</p>
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-[#1A2642]">
-                <span className="text-[#64748B] text-sm">{quote.created}</span>
-                <span className="text-[#00FF88] text-lg">${quote.total.toFixed(2)}</span>
+                <span className="text-[#64748B] text-sm">{quote.createdAt}</span>
+                <span className="text-[#00FF88] text-lg">{quote.totalGross.toFixed(2)} zł</span>
               </div>
             </button>
           );
