@@ -53,19 +53,19 @@ export function AdminPanel() {
   ];
 
   const tabs = [
-    { id: 'users' as const, label: 'User Management', icon: Users },
-    { id: 'roles' as const, label: 'Roles & Access', icon: Shield },
-    { id: 'sla' as const, label: 'SLA Configuration', icon: Clock },
-    { id: 'notifications' as const, label: 'Notifications', icon: Bell },
-    { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
+    { id: 'users' as const, label: 'Zarządzanie użytkownikami', icon: Users },
+    { id: 'roles' as const, label: 'Role i dostęp', icon: Shield },
+    { id: 'sla' as const, label: 'Konfiguracja SLA', icon: Clock },
+    { id: 'notifications' as const, label: 'Powiadomienia', icon: Bell },
+    { id: 'analytics' as const, label: 'Analityka', icon: BarChart3 },
   ];
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-white text-2xl mb-1">Admin Panel</h1>
-        <p className="text-[#94A3B8]">System configuration and management</p>
+        <h1 className="text-white text-2xl mb-1">Panel Administratora</h1>
+        <p className="text-[#94A3B8]">Konfiguracja systemu i zarządzanie</p>
       </div>
 
       {/* Tabs */}
@@ -95,22 +95,22 @@ export function AdminPanel() {
       {activeTab === 'users' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-white">User Management</h2>
+            <h2 className="text-white">Zarządzanie użytkownikami</h2>
             <button className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform flex items-center gap-2">
               <Plus className="w-5 h-5" />
-              Add User
+              Dodaj użytkownika
             </button>
           </div>
           <div className="bg-[#0C1222] rounded-xl border border-[#1A2642] shadow-lg overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#1A2642]">
-                  <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Name</th>
+                  <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Imię</th>
                   <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Email</th>
-                  <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Role</th>
+                  <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Rola</th>
                   <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Status</th>
-                  <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Last Active</th>
-                  <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Actions</th>
+                  <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Ostatnio aktywny</th>
+                  <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Akcje</th>
                 </tr>
               </thead>
               <tbody>

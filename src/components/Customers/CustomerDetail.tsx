@@ -127,7 +127,7 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
             </div>
             <div>
               <h1 className="text-white text-2xl mb-1">{customer.name}</h1>
-              <p className="text-[#94A3B8]">Customer since {formatDate(customer.joined)}</p>
+              <p className="text-[#94A3B8]">Klient od {formatDate(customer.joined)}</p>
             </div>
           </div>
         </div>
@@ -136,7 +136,7 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
           className="px-6 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2"
         >
           <Edit className="w-5 h-5" />
-          Edit Customer
+          Edytuj klienta
         </button>
       </div>
 
@@ -144,7 +144,7 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
         {/* Contact Information */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Contact Information</h3>
+            <h3 className="text-white mb-4">Informacje kontaktowe</h3>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <Mail className="w-5 h-5 text-[#00D9FF] mt-0.5" />
@@ -156,7 +156,7 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
               <div className="flex items-start gap-3">
                 <Phone className="w-5 h-5 text-[#00FF88] mt-0.5" />
                 <div>
-                  <p className="text-[#64748B] text-sm mb-1">Phone</p>
+                  <p className="text-[#64748B] text-sm mb-1">Telefon</p>
                   <p className="text-white">{customer.phone ?? '—'}</p>
                 </div>
               </div>
@@ -164,18 +164,18 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
           </div>
 
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Statistics</h3>
+            <h3 className="text-white mb-4">Statystyki</h3>
             <div className="space-y-4">
               <div>
-                <p className="text-[#64748B] text-sm mb-1">Total Tickets</p>
+                <p className="text-[#64748B] text-sm mb-1">Wszystkie zgłoszenia</p>
                 <p className="text-white text-2xl">{customer.totalTickets}</p>
               </div>
               <div>
-                <p className="text-[#64748B] text-sm mb-1">Active Tickets</p>
+                <p className="text-[#64748B] text-sm mb-1">Aktywne zgłoszenia</p>
                 <p className="text-[#00FF88] text-2xl">{customer.activeTickets}</p>
               </div>
               <div>
-                <p className="text-[#64748B] text-sm mb-1">Registered Devices</p>
+                <p className="text-[#64748B] text-sm mb-1">Zarejestrowane urządzenia</p>
                 <p className="text-white text-2xl">{customer.devicesCount}</p>
               </div>
             </div>
@@ -189,13 +189,13 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-[#00FF88]" />
-                Ticket History
+                Historia zgłoszeń
               </h3>
               <button
                 onClick={() => router.push('/tickets/new')}
                 className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform text-sm"
               >
-                New Ticket
+                Nowe zgłoszenie
               </button>
             </div>
             <div className="space-y-3">
@@ -234,13 +234,13 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-[#A78BFA]" />
-                Registered Devices
+                Zarejestrowane urządzenia
               </h3>
               <button
                 onClick={() => router.push('/devices')}
                 className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#00FF88] hover:bg-[#00FF88]/5 transition-colors text-sm"
               >
-                Add Device
+                Dodaj urządzenie
               </button>
             </div>
             <div className="space-y-3">
@@ -273,7 +273,7 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white">Edit Customer</h3>
+              <h3 className="text-white">Edytuj klienta</h3>
               <button
                 onClick={() => setIsEditOpen(false)}
                 className="text-[#94A3B8] hover:text-white"
@@ -283,7 +283,7 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
             </div>
             <form className="space-y-4" onSubmit={handleUpdate}>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Full Name</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Imię i nazwisko</label>
                 <input
                   type="text"
                   value={name}
@@ -303,7 +303,7 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
                 />
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Phone</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Telefon</label>
                 <input
                   type="tel"
                   value={phone}
@@ -323,7 +323,7 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
                   disabled={isSaving}
                   className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60"
                 >
-                  {isSaving ? 'Saving...' : 'Save changes'}
+                  {isSaving ? 'Zapisywanie...' : 'Zapisz zmiany'}
                 </button>
                 <button
                   type="button"

@@ -353,14 +353,23 @@ export function TicketDetail({ ticket, deadline, onBack, onUpdateStatus, onAddNo
               <div>
                 <p className="text-[#64748B] text-sm mb-1">Priorytet</p>
                 <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121B2D] border border-[#1A2642] text-[#94A3B8] text-sm">
-                  <div className="w-2 h-2 rounded-full bg-[#FFB800]" />
-                  {ticket.priority}
+                  <div className={`w-2 h-2 rounded-full ${
+                    ticket.priority === 'CRITICAL' || ticket.priority === 'HIGH' ? 'bg-[#FF6B35]' : 
+                    ticket.priority === 'NORMAL' ? 'bg-[#FFB800]' : 'bg-[#00D9FF]'
+                  }`} />
+                  {ticket.priority === 'CRITICAL' ? 'Krytyczny' :
+                   ticket.priority === 'HIGH' ? 'Wysoki' :
+                   ticket.priority === 'NORMAL' ? 'Normalny' :
+                   ticket.priority === 'LOW' ? 'Niski' : ticket.priority}
                 </span>
               </div>
               <div>
                 <p className="text-[#64748B] text-sm mb-1">SLA</p>
                 <span className="inline-block px-3 py-1 rounded-full bg-[#64748B]/10 text-[#94A3B8] text-sm border border-[#64748B]/20">
-                  {ticket.slaType}
+                  {ticket.slaType === 'STANDARD' ? 'Standard' :
+                   ticket.slaType === 'EXPRESS' ? 'Ekspres' :
+                   ticket.slaType === 'VIP' ? 'VIP' :
+                   ticket.slaType === 'WARRANTY' ? 'Gwarancja' : ticket.slaType}
                 </span>
               </div>
             </div>

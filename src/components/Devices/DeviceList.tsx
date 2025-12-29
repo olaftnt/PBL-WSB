@@ -131,9 +131,6 @@ export function DeviceList({ onNavigate, devices, customers, onCreateDevice }: D
               <div className="w-12 h-12 bg-gradient-to-br from-[#A78BFA] to-[#8B5CF6] rounded-lg flex items-center justify-center text-white">
                 {getDeviceIcon()}
               </div>
-              <span className="px-2 py-1 rounded text-xs bg-[#121B2D] text-[#94A3B8] border border-[#1A2642] capitalize">
-                device
-              </span>
             </div>
             <h3 className="text-white mb-1 group-hover:text-[#00FF88] transition-colors">
               {device.name} {device.model ?? ''}
@@ -141,7 +138,7 @@ export function DeviceList({ onNavigate, devices, customers, onCreateDevice }: D
             <p className="text-[#64748B] text-sm mb-4">SN: {device.serial ?? '—'}</p>
             <div className="flex items-center justify-between pt-4 border-t border-[#1A2642]">
               <p className="text-[#94A3B8] text-sm">{device.customerName}</p>
-              <span className="text-[#64748B] text-xs">{device.tickets} repairs</span>
+              <span className="text-[#64748B] text-xs">{device.tickets} napraw</span>
             </div>
           </button>
         ))}

@@ -262,13 +262,22 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(t.status)}`}>
-                        {t.status}
+                        {t.status === 'NEW' ? 'Nowe' : 
+                         t.status === 'IN_PROGRESS' ? 'W trakcie' :
+                         t.status === 'WAITING' ? 'Oczekujące' :
+                         t.status === 'DONE' ? 'Wykonane' :
+                         t.status === 'CANCELED' ? 'Anulowane' : t.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${getPriorityColor(t.priority)}`} />
-                        <span className="text-[#94A3B8] text-sm">{t.priority}</span>
+                        <span className="text-[#94A3B8] text-sm">
+                          {t.priority === 'CRITICAL' ? 'Krytyczny' :
+                           t.priority === 'HIGH' ? 'Wysoki' :
+                           t.priority === 'NORMAL' ? 'Normalny' :
+                           t.priority === 'LOW' ? 'Niski' : t.priority}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">

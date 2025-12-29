@@ -20,15 +20,15 @@ interface LayoutProps {
 }
 
 const menuItems = [
-  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'tickets' as View, label: 'Tickets', icon: Ticket },
-  { id: 'customers' as View, label: 'Customers', icon: Users },
-  { id: 'devices' as View, label: 'Devices', icon: Smartphone },
-  { id: 'public-status' as View, label: 'Public Status', icon: Globe },
-  { id: 'sla' as View, label: 'SLA & Tracking', icon: Clock },
-  { id: 'inventory' as View, label: 'Inventory', icon: Package },
-  { id: 'quotes' as View, label: 'Quotes', icon: FileText },
-  { id: 'admin' as View, label: 'Admin Panel', icon: Settings },
+  { id: 'dashboard' as View, label: 'Panel główny', icon: LayoutDashboard },
+  { id: 'tickets' as View, label: 'Zgłoszenia', icon: Ticket },
+  { id: 'customers' as View, label: 'Klienci', icon: Users },
+  { id: 'devices' as View, label: 'Urządzenia', icon: Smartphone },
+  { id: 'public-status' as View, label: 'Status publiczny', icon: Globe },
+  { id: 'sla' as View, label: 'SLA i Śledzenie', icon: Clock },
+  { id: 'inventory' as View, label: 'Magazyn', icon: Package },
+  { id: 'quotes' as View, label: 'Kosztorysy', icon: FileText },
+  { id: 'admin' as View, label: 'Panel admina', icon: Settings },
 ];
 
 export function Layout({ children, currentView, onNavigate }: LayoutProps) {
@@ -43,7 +43,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
             </div>
             <div>
               <h1 className="text-white">ITSM Pro</h1>
-              <p className="text-[#64748B] text-xs">Smart, Fast, Automated</p>
+              <p className="text-[#64748B] text-xs">Szybki, Inteligentny, Zautomatyzowany</p>
             </div>
           </div>
 
@@ -72,7 +72,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-[#1A2642]">
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[#94A3B8] hover:bg-[#121B2D] hover:text-white transition-all">
             <LogOut className="w-5 h-5" />
-            <span>Logout</span>
+            <span>Wyloguj</span>
           </button>
         </div>
       </aside>
@@ -83,8 +83,8 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
         <header className="bg-[#0C1222]/50 backdrop-blur-sm border-b border-[#1A2642] sticky top-0 z-20">
           <div className="px-8 py-4 flex items-center justify-between">
             <div>
-              <h2 className="text-white">IT Service Management Platform</h2>
-              <p className="text-[#64748B] text-sm">Smart, Fast, Automated.</p>
+              <h2 className="text-white">System Zarządzania Serwisem</h2>
+              <p className="text-[#64748B] text-sm">Inteligentny, Szybki, Zautomatyzowany.</p>
             </div>
             <div className="flex items-center gap-4">
               <button className="relative p-2 text-[#94A3B8] hover:text-white transition-colors">
@@ -96,7 +96,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
                   <span className="text-white text-sm">AD</span>
                 </div>
                 <div>
-                  <p className="text-white text-sm">Admin User</p>
+                  <p className="text-white text-sm">Użytkownik Admin</p>
                   <p className="text-[#64748B] text-xs">Administrator</p>
                 </div>
               </div>

@@ -207,10 +207,10 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
         <div className="lg:col-span-2 space-y-6">
           {/* Info */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg space-y-4">
-            <h3 className="text-white mb-2">Quote Information</h3>
+            <h3 className="text-white mb-2">Informacje o kosztorysie</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Ticket</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Zgłoszenie</label>
                 <select
                   value={ticketId}
                   onChange={(e) => {
@@ -223,7 +223,7 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
                   }}
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
                 >
-                  <option value="">Wybierz ticket</option>
+                  <option value="">Wybierz zgłoszenie</option>
                   {tickets.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.number}
@@ -232,23 +232,23 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
                 </select>
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Customer</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Klient</label>
                 <div className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white">
                   {tickets.find((t) => t.id === ticketId)?.customerName || initialQuote.customerName || '—'}
                 </div>
               </div>
             </div>
             {initialQuote.deviceName && (
-              <p className="text-sm text-[#94A3B8]">Device: {initialQuote.deviceName}</p>
+              <p className="text-sm text-[#94A3B8]">Urządzenie: {initialQuote.deviceName}</p>
             )}
           </div>
 
           {/* Labor */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Labor</h3>
+            <h3 className="text-white mb-4">Robocizna</h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Hours</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Godziny</label>
                 <input
                   type="number"
                   step="0.5"
@@ -258,7 +258,7 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
                 />
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Rate (PLN/h)</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Stawka (zł/h)</label>
                 <input
                   type="number"
                   value={laborRate}
@@ -267,7 +267,7 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
                 />
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Total</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Suma</label>
                 <div className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#00FF88]">
                   {laborCost.toFixed(2)} zł
                 </div>
@@ -278,13 +278,13 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
           {/* Parts */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white">Parts</h3>
+              <h3 className="text-white">Części</h3>
               <button
                 onClick={handleAddPart}
                 className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#00FF88] hover:bg-[#00FF88]/5 transition-colors flex items-center gap-2 text-sm"
               >
                 <Plus className="w-4 h-4" />
-                Add Part
+                Dodaj część
               </button>
             </div>
             <div className="space-y-3">
@@ -307,19 +307,19 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
                       </select>
                     </div>
                     <div className="col-span-3">
-                      <label className="block text-[#94A3B8] text-xs mb-2">Part Name</label>
+                      <label className="block text-[#94A3B8] text-xs mb-2">Nazwa części</label>
                       <input
                         type="text"
                         value={part.description}
                         onChange={(e) => {
                           setItems(items.map((p) => (p.id === part.id ? { ...p, description: e.target.value } : p)));
                         }}
-                        placeholder="Select or enter part..."
+                        placeholder="Wybierz lub wpisz nazwę..."
                         className="w-full px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-white text-sm focus:outline-none focus:border-[#00FF88] transition-colors"
                       />
                     </div>
                     <div className="col-span-1">
-                      <label className="block text-[#94A3B8] text-xs mb-2">Qty</label>
+                      <label className="block text-[#94A3B8] text-xs mb-2">Ilość</label>
                       <input
                         type="number"
                         value={part.quantity}
@@ -332,7 +332,7 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
                       />
                     </div>
                     <div className="col-span-2">
-                      <label className="block text-[#94A3B8] text-xs mb-2">Price</label>
+                      <label className="block text-[#94A3B8] text-xs mb-2">Cena</label>
                       <input
                         type="number"
                         step="0.01"
@@ -344,7 +344,7 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
                       />
                     </div>
                     <div className="col-span-1">
-                      <label className="block text-[#94A3B8] text-xs mb-2">Total</label>
+                      <label className="block text-[#94A3B8] text-xs mb-2">Suma</label>
                       <div className="px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-[#00FF88] text-sm">
                         {(part.quantity * part.unitPrice).toFixed(2)} zł
                       </div>
@@ -365,9 +365,9 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
 
           {/* Notes */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Notes / Terms</h3>
+            <h3 className="text-white mb-4">Notatki / Warunki</h3>
             <textarea
-              placeholder="Add any additional notes or terms for the customer..."
+              placeholder="Dodaj notatki/warunki dla klienta..."
               rows={4}
               defaultValue={initialQuote.notes ?? ''}
               className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors resize-none"

@@ -106,7 +106,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
           className="px-6 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2"
         >
           <Edit className="w-5 h-5" />
-          Edit Device
+          Edytuj urządzenie
         </button>
       </div>
 
@@ -114,10 +114,10 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
         {/* Device Information */}
         <div className="space-y-6">
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Device Information</h3>
+            <h3 className="text-white mb-4">Informacje o urządzeniu</h3>
             <div className="space-y-4">
               <div>
-                <p className="text-[#64748B] text-sm mb-1">Name</p>
+                <p className="text-[#64748B] text-sm mb-1">Nazwa</p>
                 <p className="text-white capitalize">{device.name}</p>
               </div>
               <div>
@@ -125,7 +125,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
                 <p className="text-white">{device.model ?? '—'}</p>
               </div>
               <div>
-                <p className="text-[#64748B] text-sm mb-1">Serial Number</p>
+                <p className="text-[#64748B] text-sm mb-1">Numer seryjny</p>
                 <p className="text-white">{device.serial ?? '—'}</p>
               </div>
             </div>
@@ -134,7 +134,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <h3 className="text-white mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-[#00D9FF]" />
-              Owner
+              Właściciel
             </h3>
             <button
               onClick={() => router.push(viewToPath('customer-detail', device.customer.id))}
@@ -146,7 +146,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
           </div>
 
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4">Notes</h3>
+            <h3 className="text-white mb-4">Notatki</h3>
             <p className="text-[#94A3B8] text-sm">{device.notes ?? '—'}</p>
           </div>
         </div>
@@ -163,7 +163,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
                 onClick={() => router.push('/tickets/new')}
                 className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform text-sm"
               >
-                New Ticket
+                Nowe zgłoszenie
               </button>
             </div>
             <div className="space-y-4">
@@ -203,7 +203,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white">Edit Device</h3>
+              <h3 className="text-white">Edytuj urządzenie</h3>
               <button
                 onClick={() => setIsEditOpen(false)}
                 className="text-[#94A3B8] hover:text-white"

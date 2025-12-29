@@ -91,15 +91,15 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-white text-2xl mb-1">Customer Database</h1>
-          <p className="text-[#94A3B8]">Manage customer information</p>
+          <h1 className="text-white text-2xl mb-1">Baza Klientów</h1>
+          <p className="text-[#94A3B8]">Zarządzaj informacjami o klientach</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
           className="px-6 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          Add Customer
+          Dodaj klienta
         </button>
       </div>
 
@@ -109,7 +109,7 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" />
           <input
             type="text"
-            placeholder="Search customers by name, email, or phone..."
+            placeholder="Szukaj klientów po nazwie, emailu lub telefonie..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
@@ -133,7 +133,7 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
               </div>
               {customer.activeTickets > 0 && (
                 <span className="px-2 py-1 rounded-full text-xs bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20">
-                  {customer.activeTickets} active
+                  {customer.activeTickets} aktywne
                 </span>
               )}
             </div>
@@ -153,9 +153,9 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
             <div className="flex items-center justify-between pt-4 border-t border-[#1A2642]">
               <div className="flex items-center gap-2">
                 <Ticket className="w-4 h-4 text-[#64748B]" />
-                <span className="text-[#94A3B8] text-sm">{customer.tickets} tickets</span>
+                <span className="text-[#94A3B8] text-sm">{customer.tickets} zgłoszeń</span>
               </div>
-              <span className="text-[#64748B] text-xs">Since {formatDate(customer.joined)}</span>
+              <span className="text-[#64748B] text-xs">Od {formatDate(customer.joined)}</span>
             </div>
           </button>
         ))}
@@ -166,12 +166,12 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
         </div>
       )}
 
-      {/* Add Customer Modal */}
+      {/* Modal dodania klienta */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white">Add New Customer</h3>
+              <h3 className="text-white">Dodaj klienta</h3>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="text-[#94A3B8] hover:text-white"
@@ -182,10 +182,10 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">First Name</label>
+                  <label className="block text-[#94A3B8] text-sm mb-2">Imię</label>
                   <input
                     type="text"
-                    placeholder="John"
+                    placeholder="Jan"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     disabled={isSubmitting}
@@ -193,10 +193,10 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
                   />
                 </div>
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Last Name</label>
+                  <label className="block text-[#94A3B8] text-sm mb-2">Nazwisko</label>
                   <input
                     type="text"
-                    placeholder="Smith"
+                    placeholder="Kowalski"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     disabled={isSubmitting}
@@ -205,10 +205,10 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
                 </div>
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Email Address</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Adres Email</label>
                 <input
                   type="email"
-                  placeholder="john@email.com"
+                  placeholder="jan@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isSubmitting}
@@ -216,10 +216,10 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
                 />
               </div>
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Phone Number</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">Numer Telefonu</label>
                 <input
                   type="tel"
-                  placeholder="+1 234 567 8900"
+                  placeholder="+48 123 456 789"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   disabled={isSubmitting}
@@ -237,7 +237,7 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60 disabled:hover:scale-100"
                 >
-                  {isSubmitting ? 'Adding...' : 'Add Customer'}
+                  {isSubmitting ? 'Dodaję...' : 'Dodaj klienta'}
                 </button>
                 <button
                   type="button"
@@ -245,7 +245,7 @@ export function CustomerList({ onNavigate, customers, onCreateCustomer }: Custom
                   disabled={isSubmitting}
                   className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
                 >
-                  Cancel
+                  Anuluj
                 </button>
               </div>
             </form>
