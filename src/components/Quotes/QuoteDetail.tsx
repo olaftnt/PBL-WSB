@@ -185,9 +185,9 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
           </button>
           <div>
             <h1 className="text-white text-2xl mb-1">
-              {isNew ? 'New Quote' : `Quote ${initialQuote.number}`}
+              {isNew ? 'New Quote' : `Wycena ${initialQuote.number}`}
             </h1>
-            <p className="text-[#94A3B8]">{isNew ? 'Create repair estimate' : 'Quote Details'}</p>
+            <p className="text-[#94A3B8]">{isNew ? 'Create repair estimate' : 'Szczegóły kosztorysu'}</p>
           </div>
         </div>
             <div className="flex items-center gap-3">
@@ -195,7 +195,7 @@ export function QuoteDetail({ initialQuote, parts: availableParts, tickets }: Qu
             <>
               <button className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2">
                 <Download className="w-4 h-4" />
-                Download PDF
+                Pobierz PDF (niezaimplementowane)
               </button>
             </>
           )}
