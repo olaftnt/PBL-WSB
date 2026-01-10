@@ -227,8 +227,8 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">SKU</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Nazwa</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Ilość</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Min. ilość</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Zarezerw.</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Min. ilość</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Cena</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Status</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Akcje</th>
@@ -246,19 +246,16 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                       <span className="text-[#94A3B8]">{part.name}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[#94A3B8] text-sm">{part.category}</span>
-                    </td>
-                    <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Package className={`w-4 h-4 ${part.status === 'ok' ? 'text-[#00FF88]' : 'text-[#FF6B35]'}`} />
                         <span className="text-white">{part.quantity}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[#64748B] text-sm">{part.minQuantity}</span>
+                      <span className="text-[#64748B] text-sm">{part.reserved}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[#64748B] text-sm">{part.reserved}</span>
+                      <span className="text-[#64748B] text-sm">{part.minQuantity}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-[#00FF88]">{part.price.toFixed(2)} zł</span>
