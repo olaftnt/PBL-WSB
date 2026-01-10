@@ -37,19 +37,23 @@ export function QuoteDetail({
   tickets,
 }: QuoteDetailProps) {
   const router = useRouter();
-  const [laborHours, setLaborHours] = useState(initialQuote.laborHours);
-  const [laborRate, setLaborRate] = useState(initialQuote.laborRate);
+  const [laborHours, setLaborHours] = useState<string>(
+    String(initialQuote.laborHours ?? 0)
+  );
+  const [laborRate, setLaborRate] = useState<string>(
+    String(initialQuote.laborRate ?? 0)
+  );
   const [vatRate, setVatRate] = useState(initialQuote.vatRate);
   const [ticketId, setTicketId] = useState(initialQuote.ticketId);
   const [customerId, setCustomerId] = useState(initialQuote.customerId);
   const [notes, setNotes] = useState(initialQuote.notes ?? "");
-  const [items, setItems] = useState<QuoteItemInput[]>(
+  const [items, setItems] = useState<any[]>(
     initialQuote.items.map((i) => ({
       id: i.id,
       partId: i.partId,
       description: i.description,
-      quantity: i.quantity,
-      unitPrice: i.unitPrice,
+      quantity: String(i.quantity ?? 1),
+      unitPrice: String(i.unitPrice ?? 0),
     }))
   );
   const isNew = initialQuote.id === "new";
@@ -59,14 +63,16 @@ export function QuoteDetail({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const laborCost = useMemo(
-    () => laborHours * laborRate,
-    [laborHours, laborRate]
-  );
-  const partsCost = useMemo(
-    () => items.reduce((acc, part) => acc + part.quantity * part.unitPrice, 0),
-    [items]
-  );
+  const laborCost = useMemo(() => {
+    return (parseFloat(laborHours) || 0) * (parseFloat(laborRate) || 0);
+  }, [laborHours, laborRate]);
+  const partsCost = useMemo(() => {
+    return items.reduce(
+      (acc, part) =>
+        acc + (parseFloat(part.quantity) || 0) * (parseFloat(part.unitPrice) || 0),
+      0
+    );
+  }, [items]);
   const netTotal = useMemo(() => laborCost + partsCost, [laborCost, partsCost]);
   const vatAmount = useMemo(
     () => netTotal * (vatRate / 100),
@@ -106,8 +112,8 @@ export function QuoteDetail({
         id: Date.now().toString(),
         partId: undefined,
         description: "",
-        quantity: 1,
-        unitPrice: 0,
+        quantity: "1",
+        unitPrice: "0",
       },
     ]);
   };
@@ -125,7 +131,8 @@ export function QuoteDetail({
               ...p,
               partId: selected?.id,
               description: selected?.name ?? "",
-              unitPrice: selected?.price ?? p.unitPrice,
+              unitPrice:
+                selected?.price !== undefined ? String(selected.price) : p.unitPrice,
             }
           : p
       )
@@ -141,16 +148,16 @@ export function QuoteDetail({
         ticketId: ticketId || "",
         customerId: customerId || "",
         deviceId: initialQuote.deviceId || null,
-        laborHours,
-        laborRate,
+        laborHours: parseFloat(laborHours) || 0,
+        laborRate: parseFloat(laborRate) || 0,
         vatRate,
         notes: notes || "",
         items: items.map((i) => ({
           id: i.id,
           partId: i.partId || null,
           description: i.description || "Pozycja",
-          quantity: i.quantity,
-          unitPrice: i.unitPrice,
+          quantity: parseInt(i.quantity) || 0,
+          unitPrice: parseFloat(i.unitPrice) || 0,
         })),
         status: saveAs,
       });
@@ -310,9 +317,7 @@ export function QuoteDetail({
                   type="number"
                   step="0.5"
                   value={laborHours}
-                  onChange={(e) =>
-                    setLaborHours(parseFloat(e.target.value) || 0)
-                  }
+                  onChange={(e) => setLaborHours(e.target.value)}
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
                 />
               </div>
@@ -323,9 +328,7 @@ export function QuoteDetail({
                 <input
                   type="number"
                   value={laborRate}
-                  onChange={(e) =>
-                    setLaborRate(parseFloat(e.target.value) || 0)
-                  }
+                  onChange={(e) => setLaborRate(e.target.value)}
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
                 />
               </div>
@@ -408,10 +411,10 @@ export function QuoteDetail({
                         value={part.quantity}
                         min={1}
                         onChange={(e) => {
-                          const qty = parseInt(e.target.value) || 0;
+                          const val = e.target.value;
                           setItems(
                             items.map((p) =>
-                              p.id === part.id ? { ...p, quantity: qty } : p
+                              p.id === part.id ? { ...p, quantity: val } : p
                             )
                           );
                         }}
@@ -427,14 +430,10 @@ export function QuoteDetail({
                         step="0.01"
                         value={part.unitPrice}
                         onChange={(e) => {
+                          const val = e.target.value;
                           setItems(
                             items.map((p) =>
-                              p.id === part.id
-                                ? {
-                                    ...p,
-                                    unitPrice: parseFloat(e.target.value) || 0,
-                                  }
-                                : p
+                              p.id === part.id ? { ...p, unitPrice: val } : p
                             )
                           );
                         }}
@@ -446,7 +445,10 @@ export function QuoteDetail({
                         Suma
                       </label>
                       <div className="px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-[#00FF88] text-sm">
-                        {(part.quantity * part.unitPrice).toFixed(2)} zł
+                        {(
+                          (parseFloat(part.quantity) || 0) *
+                          (parseFloat(part.unitPrice) || 0)
+                        ).toFixed(2)} zł
                       </div>
                     </div>
                     <div className="col-span-1">
