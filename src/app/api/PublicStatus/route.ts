@@ -85,6 +85,15 @@ const formatDisplayDate = (date: Date | null) => {
   });
 };
 
+const formatCurrencyPLN = (value: number | null) => {
+  if (value === null) return null;
+  return value.toLocaleString('pl-PL', {
+    style: 'currency',
+    currency: 'PLN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 export async function POST(req: Request) {
   try {
@@ -192,7 +201,12 @@ export async function POST(req: Request) {
       }
     }
 
-    
+    const quote = await prisma.quote.findFirst({
+      where: { ticketId: ticket.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const estimatedCost = quote ? formatCurrencyPLN(Number(quote.totalGross)) : null;    
 
     return NextResponse.json({
       number: ticket.number,
@@ -201,7 +215,7 @@ export async function POST(req: Request) {
       createdAt: formatDisplayDate(ticket.createdAt), 
       events,
       estimatedCompletion,
-      estimatedCost: null,
+      estimatedCost,
       notes: ticket.description,
     });
   } catch (error) {
