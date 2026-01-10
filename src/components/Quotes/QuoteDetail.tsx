@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -143,7 +143,7 @@ export function QuoteDetail({
     setSaving(true);
     setLastAction(null);
     try {
-      await saveQuote({
+      const result = await saveQuote({
         id: isNew ? undefined : initialQuote.id,
         ticketId: ticketId || "",
         customerId: customerId || "",
@@ -165,20 +165,16 @@ export function QuoteDetail({
       setLastAction(
         saveAs === "DRAFT" ? "Zapisano jako szkic." : "Zapisano kosztorys."
       );
-      if (isNew && typeof window !== "undefined") {
-        router.push("/quotes");
+      if (isNew && result?.id) {
+        router.push(`/quotes/${result.id}`);
       } else {
         router.refresh();
+        setSaving(false);
       }
     } catch (err: any) {
       setLastAction(err?.message ?? "Nie udało się zapisać kosztorysu.");
-    } finally {
       setSaving(false);
     }
-  };
-
-  const handleSendToCustomer = async () => {
-    
   };
 
   const handleDecision = async (decision: QuoteStatus) => {
@@ -190,9 +186,7 @@ export function QuoteDetail({
           ? "Kosztorys zaakceptowany online."
           : "Kosztorys został odrzucony."
       );
-      if (typeof window !== "undefined") {
-        router.refresh();
-      }
+      router.refresh();
     } catch (err: any) {
       setLastAction(err?.message ?? "Nie udało się zaktualizować statusu.");
     }
@@ -207,13 +201,9 @@ export function QuoteDetail({
     try {
       await deleteQuote(initialQuote.id);
       setLastAction("Kosztorys usunięty.");
-      
-      if (typeof window !== "undefined") {
-        router.push("/quotes");
-      }
+      router.push("/quotes");
     } catch (err: any) {
       setLastAction(err?.message ?? "Nie udało się usunąć kosztorysu.");
-    } finally {
       setDeleting(false);
     }
   };
@@ -233,7 +223,7 @@ export function QuoteDetail({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => history.back()}
+            onClick={() => router.push("/quotes")}
             className="p-2 text-[#94A3B8] hover:text-white transition-colors"
           >
             <ArrowLeft className="w-6 h-6" />

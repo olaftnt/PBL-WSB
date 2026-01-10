@@ -4,23 +4,6 @@ import { prisma } from '@/lib/prisma';
 import { QuoteStatus } from '@prisma/client';
 import type { QuoteItemInput } from '@/types/quote';
 
-const generateQuoteNumber = async () => {
-  const date = new Date();
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-  const prefix = `QT-${yyyy}${mm}${dd}`;
-  const count = await prisma.quote.count({
-    where: {
-      createdAt: {
-        gte: new Date(`${yyyy}-${mm}-${dd}T00:00:00.000Z`),
-      },
-    },
-  });
-  const seq = String(count + 1).padStart(3, '0');
-  return `${prefix}-${seq}`;
-};
-
 const computeTotals = (laborHours: number, laborRate: number, vatRate: number, items: QuoteItemInput[]) => {
   const labor = laborHours * laborRate;
   const parts = items.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
@@ -28,6 +11,42 @@ const computeTotals = (laborHours: number, laborRate: number, vatRate: number, i
   const vat = net * (vatRate / 100);
   const gross = net + vat;
   return { labor, parts, net, vat, gross };
+};
+
+const generateQuoteNumberWithTx = async (tx: any) => {
+  const date = new Date();
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const prefix = `QT-${yyyy}${mm}${dd}`;
+
+  // Szukamy najwyższego numeru z dzisiaj zamiast liczyć (count),
+  // aby uniknąć problemów po usunięciu kosztorysów.
+  const lastQuote = await tx.quote.findFirst({
+    where: {
+      number: {
+        startsWith: prefix,
+      },
+    },
+    orderBy: {
+      number: 'desc',
+    },
+    select: {
+      number: true,
+    },
+  });
+
+  let nextSeq = 1;
+  if (lastQuote) {
+    const parts = lastQuote.number.split('-');
+    const lastSeq = parseInt(parts[parts.length - 1], 10);
+    if (!isNaN(lastSeq)) {
+      nextSeq = lastSeq + 1;
+    }
+  }
+
+  const seq = String(nextSeq).padStart(3, '0');
+  return `${prefix}-${seq}`;
 };
 
 type SaveQuoteInput = {
@@ -158,8 +177,8 @@ export async function saveQuote(input: SaveQuoteInput) {
   }
 
   // create
-  const number = await generateQuoteNumber();
   return prisma.$transaction(async (tx) => {
+    const number = await generateQuoteNumberWithTx(tx);
     const quote = await tx.quote.create({
       data: {
         number,
@@ -216,4 +235,3 @@ export async function deleteQuote(id: string) {
   const deletedQuote = await prisma.quote.delete({ where: { id } });
   return { deletedQuoteId: deletedQuote.id, deletedItems: deletedItems.count };
 }
-
