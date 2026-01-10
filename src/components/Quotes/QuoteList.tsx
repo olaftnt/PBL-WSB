@@ -40,7 +40,7 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
           bg: "bg-[#00D9FF]/10",
           text: "text-[#00D9FF]",
           border: "border-[#00D9FF]/20",
-          label: "Wysłany",
+          label: "Zapisany",
         };
       case "ACCEPTED":
         return {
@@ -102,7 +102,7 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
             color: "from-[#00D9FF] to-[#0099CC]",
           },
           {
-            label: "Wysłane",
+            label: "Zapisane",
             value: stats.sent,
             color: "from-[#FFB800] to-[#CC9400]",
           },
