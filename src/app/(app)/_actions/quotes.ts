@@ -76,15 +76,15 @@ export async function saveQuote(input: SaveQuoteInput) {
     status = QuoteStatus.DRAFT,
   } = input;
 
-  if (!ticketId) throw new Error('ticketId is required');
-  if (!customerId) throw new Error('customerId is required');
-  if (!Array.isArray(items)) throw new Error('items must be an array');
+  if (!ticketId) throw new Error('ID zgłoszenia jest wymagane');
+  if (!customerId) throw new Error('ID klienta jest wymagane');
+  if (!Array.isArray(items)) throw new Error('Pozycje muszą być tablicą');
 
   const normalizedItems = (items ?? []).map((item) => {
     const quantity = Number(item.quantity);
     const unitPrice = Number(item.unitPrice);
-    if (Number.isNaN(quantity) || quantity <= 0) throw new Error('Quantity must be > 0');
-    if (Number.isNaN(unitPrice) || unitPrice < 0) throw new Error('Price must be >= 0');
+    if (Number.isNaN(quantity) || quantity <= 0) throw new Error('Ilość musi być większa od 0');
+    if (Number.isNaN(unitPrice) || unitPrice < 0) throw new Error('Cena musi być większa lub równa 0');
     return {
       id: item.id,
       partId: item.partId || null,
@@ -214,7 +214,7 @@ export async function saveQuote(input: SaveQuoteInput) {
 }
 
 export async function updateQuoteStatus(id: string, status: QuoteStatus) {
-  if (!id) throw new Error('Quote id is required');
+  if (!id) throw new Error('ID kosztorysu jest wymagane');
   const updated = await prisma.quote.update({
     where: { id },
     data: { status },
@@ -230,7 +230,7 @@ export async function deleteAllQuotes() {
 }
 
 export async function deleteQuote(id: string) {
-  if (!id) throw new Error('Quote id is required');
+  if (!id) throw new Error('ID kosztorysu jest wymagane');
   const deletedItems = await prisma.quoteItem.deleteMany({ where: { quoteId: id } });
   const deletedQuote = await prisma.quote.delete({ where: { id } });
   return { deletedQuoteId: deletedQuote.id, deletedItems: deletedItems.count };

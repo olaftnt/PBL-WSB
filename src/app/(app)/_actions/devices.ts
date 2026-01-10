@@ -10,8 +10,8 @@ export async function createDevice(input: {
   notes?: string | null;
 }) {
   const name = input.name?.trim();
-  if (!input.customerId) throw new Error('customerId is required');
-  if (!name) throw new Error('Device name is required');
+  if (!input.customerId) throw new Error('ID klienta jest wymagane');
+  if (!name) throw new Error('Nazwa urządzenia jest wymagana');
 
   const created = await prisma.device.create({
     data: {
@@ -34,14 +34,14 @@ export async function updateDevice(input: {
   notes?: string | null;
 }) {
   const { id } = input;
-  if (!id) throw new Error('device id is required');
+  if (!id) throw new Error('ID urządzenia jest wymagane');
 
   const name = input.name?.trim();
   const model = input.model?.trim() ?? null;
   const serial = input.serial?.trim() ?? null;
   const notes = input.notes?.trim() ?? null;
 
-  if (!name) throw new Error('Device name is required');
+  if (!name) throw new Error('Nazwa urządzenia jest wymagana');
 
   const updated = await prisma.device.update({
     where: { id },

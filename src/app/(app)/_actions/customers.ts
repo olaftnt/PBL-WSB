@@ -13,8 +13,8 @@ export async function createCustomer(input: CreateCustomerInput) {
   const email = input.email?.trim() || null;
   const phone = input.phone?.trim();
 
-  if (!name) throw new Error('Name is required');
-  if (!phone) throw new Error('Phone is required');
+  if (!name) throw new Error('Imię i nazwisko są wymagane');
+  if (!phone) throw new Error('Numer telefonu jest wymagany');
 
   const customer = await prisma.customer.create({
     data: {
@@ -36,14 +36,14 @@ export type UpdateCustomerInput = {
 
 export async function updateCustomer(input: UpdateCustomerInput) {
   const { id } = input;
-  if (!id) throw new Error('Customer ID is required');
+  if (!id) throw new Error('ID klienta jest wymagane');
 
   const name = input.name?.trim();
   const email = input.email?.trim() ?? null;
   const phone = input.phone?.trim() ?? null;
 
-  if (!name) throw new Error('Name is required');
-  if (!phone) throw new Error('Phone is required');
+  if (!name) throw new Error('Imię i nazwisko są wymagane');
+  if (!phone) throw new Error('Numer telefonu jest wymagany');
 
   const customer = await prisma.customer.update({
     where: { id },

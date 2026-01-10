@@ -16,8 +16,8 @@ export type CreateTicketInput = {
 };
 
 export async function createTicket(input: CreateTicketInput) {
-  if (!input.customerId) throw new Error('customerId is required');
-  if (!input.title?.trim()) throw new Error('title is required');
+  if (!input.customerId) throw new Error('ID klienta jest wymagane');
+  if (!input.title?.trim()) throw new Error('Tytuł jest wymagany');
 
   const number = await generateTicketNumber();
 
@@ -46,7 +46,7 @@ export async function createTicket(input: CreateTicketInput) {
 }
 
 export async function updateTicketStatus(input: { id: string; status: TicketStatus; author?: string }) {
-  if (!input.id) throw new Error('id is required');
+  if (!input.id) throw new Error('ID jest wymagane');
 
   const updated = await prisma.ticket.update({
     where: { id: input.id },
@@ -67,8 +67,8 @@ export async function updateTicketStatus(input: { id: string; status: TicketStat
 
 export async function addTicketNote(input: { ticketId: string; message: string; author?: string }) {
   const msg = input.message?.trim();
-  if (!input.ticketId) throw new Error('ticketId is required');
-  if (!msg) throw new Error('message is required');
+  if (!input.ticketId) throw new Error('ID zgłoszenia jest wymagane');
+  if (!msg) throw new Error('Wiadomość jest wymagana');
 
   const created = await prisma.ticketEvent.create({
     data: {
@@ -94,7 +94,7 @@ export type UpdateTicketInput = {
 };
 
 export async function updateTicket(input: UpdateTicketInput) {
-  if (!input.id) throw new Error('id is required');
+  if (!input.id) throw new Error('ID jest wymagane');
 
   const data: any = {};
   if (typeof input.title === 'string') data.title = input.title.trim();
@@ -123,7 +123,7 @@ export async function updateTicket(input: UpdateTicketInput) {
 }
 
 export async function deleteTicket(input: { id: string }) {
-  if (!input.id) throw new Error('id is required');
+  if (!input.id) throw new Error('ID jest wymagane');
 
   
   await prisma.ticket.delete({ where: { id: input.id } });
