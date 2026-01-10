@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
 
               <button
-                className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 transition"
+                className="hidden inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 transition"
                 title="Notifications"
               >
                 <Bell className="w-5 h-5" />
