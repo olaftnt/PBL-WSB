@@ -145,7 +145,7 @@ model PartReservation {
   createdAt DateTime @default(now())
 
   part   Part   @relation(fields: [partId], references: [id])
-  ticket Ticket @relation(fields: [ticketId], references: [id])
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@index([partId])
   @@index([ticketId])
@@ -153,24 +153,24 @@ model PartReservation {
 }
 
 model Quote {
-  id         String       @id @default(cuid())
-  number     String       @unique
+  id         String      @id @default(cuid())
+  number     String      @unique
   ticketId   String
   customerId String
   deviceId   String?
-  status     QuoteStatus  @default(DRAFT)
-  laborHours Decimal      @default(0)
-  laborRate  Decimal      @default(0)
-  vatRate    Decimal      @default(23)
+  status     QuoteStatus @default(DRAFT)
+  laborHours Decimal     @default(0)
+  laborRate  Decimal     @default(0)
+  vatRate    Decimal     @default(23)
   notes      String?
-  totalNet   Decimal      @default(0)
-  totalVat   Decimal      @default(0)
-  totalGross Decimal      @default(0)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  totalNet   Decimal     @default(0)
+  totalVat   Decimal     @default(0)
+  totalGross Decimal     @default(0)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   customer Customer @relation(fields: [customerId], references: [id])
-  ticket   Ticket   @relation(fields: [ticketId], references: [id])
+  ticket   Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   device   Device?  @relation(fields: [deviceId], references: [id])
   items    QuoteItem[]
 

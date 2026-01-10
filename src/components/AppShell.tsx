@@ -99,7 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <div className="p-4 mt-auto border-t border-white/10">
+          <div className="hidden p-4 mt-auto border-t border-white/10">
             <button
               onClick={() => {
                 clearAuthedCookie();
@@ -123,19 +123,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="text-lg font-semibold truncate">{title}</div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="hidden flex items-center gap-3">
                 {/* SEARCH (opcjonalnie) */}
                 <div className="hidden md:flex items-center gap-2 px-3 h-10 rounded-2xl bg-white/5 border border-white/10">
                   <Search className="w-4 h-4 text-white/60" />
                   <input
-                    className="bg-transparent outline-none text-sm placeholder:text-white/40 w-56"
+                    className="hidden bg-transparent outline-none text-sm placeholder:text-white/40 w-56"
                     placeholder="Szukaj..."
                   />
                 </div>
 
                 {/* NOTIFICATIONS */}
                 <button
-                  className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition"
+                  className="hidden inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition"
                   title="Powiadomienia"
                 >
                   <Bell className="w-5 h-5 text-white/80" />

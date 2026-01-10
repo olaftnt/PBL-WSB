@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Search, CheckCircle, Clock, ClockFading, Package, Truck, Mail, Phone, CircleX, PackageCheck, Wrench, BaggageClaim } from 'lucide-react';
 
-
 export function PublicStatus() {
   const [ticketNumber, setTicketNumber] = useState('');
   const [contactInfo, setContactInfo] = useState('');
@@ -182,33 +181,19 @@ export function PublicStatus() {
                           
                           {index < result.events.length - 1 && (
                             <div
-                              className={`absolute left-6 top-12 w-0.5 h-full ${
-                                bgColor.includes('bg-[#121B2D]') ? 'bg-[#1A2642]' : bgColor
-                              }`}
+                              className={`absolute left-6 top-12 w-0.5 h-full ${bgColor.includes('bg-[#121B2D]') ? 'bg-[#1A2642]' : bgColor}`}
                             ></div>
                           )}
 
                           
                           <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center ${bgColor}`}>
                             {(() => {
-                              if (step.newStatus === 'DONE') {
-                                return <PackageCheck className="w-6 h-6 text-[#0C1222]" />;
-                              }
-                              if (step.newStatus === 'IN_PROGRESS') {
-                                return <Wrench className="w-6 h-6 text-[#0C1222]" />;
-                              }
-                              if (step.newStatus === 'WAITING') {
-                                return <ClockFading className="w-6 h-6 text-[#0C1222]" />;
-                              }
-                              if (step.newStatus === 'CANCELED') {
-                                return <CircleX className="w-6 h-6 text-[#0C1222]" />;
-                              }
-                              if (step.newStatus === 'NEW') {
-                                return <BaggageClaim className="w-6 h-6 text-[#0C1222]" />;
-                              }
-                              if (step.type === 'CREATED') {
-                                return <CheckCircle className="w-6 h-6 text-[#0C1222]" />;
-                              }
+                              if (step.newStatus === 'DONE') return <PackageCheck className="w-6 h-6 text-[#0C1222]" />;
+                              if (step.newStatus === 'IN_PROGRESS') return <Wrench className="w-6 h-6 text-[#0C1222]" />;
+                              if (step.newStatus === 'WAITING') return <ClockFading className="w-6 h-6 text-[#0C1222]" />;
+                              if (step.newStatus === 'CANCELED') return <CircleX className="w-6 h-6 text-[#0C1222]" />;
+                              if (step.newStatus === 'NEW') return <BaggageClaim className="w-6 h-6 text-[#0C1222]" />;
+                              if (step.type === 'CREATED') return <CheckCircle className="w-6 h-6 text-[#0C1222]" />;
                             })()}
                           </div>
 
@@ -232,9 +217,9 @@ export function PublicStatus() {
                   <div className="bg-[#121B2D] rounded-xl p-6 border border-[#1A2642]">
                     <div className="flex items-center gap-3 mb-2">
                       <Clock className="w-5 h-5 text-[#00D9FF]" />
-                      <p className="text-[#64748B] text-sm">Szacowany czas zakończenia</p>
+                      <p className="text-[#94A3B8] text-sm">Szacowany czas zakończenia</p>
                     </div>
-                    <p className="text-white text-lg">{result.estimatedCompletion}</p>
+                    <p className="text-[#94A3B8] text-sm">{result.estimatedCompletion}</p>
                   </div>
                   <div className="bg-[#121B2D] rounded-xl p-6 border border-[#1A2642]">
                     <div className="flex items-center gap-3 mb-2">
@@ -245,13 +230,8 @@ export function PublicStatus() {
                   </div>
                 </div>
 
-                
-                <div className="bg-[#121B2D] rounded-xl p-6 border border-[#1A2642] mb-8">
-                  <h4 className="text-white mb-3">Ostatnia aktualizacja</h4>
-                  <p className="text-[#94A3B8]">Do wdrożenia jak będzie w jakimś module możliwość dodania czegoś takiego lub do usunięcia całkowicie</p>
-                </div>
-
               
+
                 <div className="bg-gradient-to-r from-[#00FF88]/10 to-[#00CC6A]/5 border border-[#00FF88]/20 rounded-xl p-6">
                   <div className="flex items-start gap-4">
                     <Truck className="w-6 h-6 text-[#00FF88] mt-1" />

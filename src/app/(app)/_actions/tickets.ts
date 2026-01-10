@@ -125,7 +125,7 @@ export async function updateTicket(input: UpdateTicketInput) {
 export async function deleteTicket(input: { id: string }) {
   if (!input.id) throw new Error('id is required');
 
-  // TicketEvent ma onDelete: Cascade, więc eventy skasują się automatycznie.
+  
   await prisma.ticket.delete({ where: { id: input.id } });
 
   return { ok: true };

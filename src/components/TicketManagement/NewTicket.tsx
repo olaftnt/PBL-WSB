@@ -51,7 +51,7 @@ interface NewTicketProps {
     accessories: string[];
   }) => Promise<any>;
 
-  // szybkie tworzenie w trakcie
+
   onCreateCustomer: (payload: CreateCustomerPayload) => Promise<Customer>;
   onCreateDevice: (payload: CreateDevicePayload) => Promise<Device>;
 
@@ -76,11 +76,11 @@ export function NewTicket({
 
   const [submitting, setSubmitting] = useState(false);
 
-  // lokalne listy (żeby po quick-create od razu było w UI)
+
   const [customersState, setCustomersState] = useState<Customer[]>(customers);
   const [devicesState, setDevicesState] = useState<Device[]>(devices);
 
-  // quick-create modale
+
   const [showQuickCustomer, setShowQuickCustomer] = useState(false);
   const [showQuickDevice, setShowQuickDevice] = useState(false);
 
@@ -108,7 +108,7 @@ export function NewTicket({
     accessories: [] as string[],
   });
 
-  const accessoryOptions = ['Charger', 'Case', 'Box', 'Cable', 'Headphones', 'Manual'];
+  const accessoryOptions = ['Ładowarka', 'Torba', 'Okablowanie', 'Słuchawki', 'Instrukcja obsługi'];
 
   const devicesForCustomer = useMemo(() => {
     if (!selectedCustomer) return devicesState;
@@ -181,7 +181,7 @@ export function NewTicket({
       const created = await onCreateCustomer({
         name,
         email: email || null,
-        phone, // wymagane string
+        phone, 
       });
 
       setCustomersState((prev) => [created, ...prev].sort((a, b) => a.name.localeCompare(b.name)));

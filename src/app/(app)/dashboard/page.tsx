@@ -12,7 +12,6 @@ const SLA_LIMITS = {
 };
 
 export default async function DashboardPage() {
-  // Wszystkie zgłoszenia
   const allTickets = await prisma.ticket.findMany({
     select: {
       id: true,
@@ -32,14 +31,12 @@ export default async function DashboardPage() {
   let doneTodayCount = 0;
 
   allTickets.forEach((ticket) => {
-    // Zakończone dzisiaj
     if (ticket.status === 'DONE') {
       if (ticket.updatedAt >= startOfToday) {
         doneTodayCount++;
       }
     }
 
-    // Aktywne i Zagrożone
     if (ticket.status !== "DONE" && ticket.status !== "CANCELED") {
       activeCount++;
 
