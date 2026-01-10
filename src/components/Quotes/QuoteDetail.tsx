@@ -78,7 +78,7 @@ export function QuoteDetail({
     switch (status) {
       case "SENT":
         return {
-          label: "Wysłany",
+          label: "Zapisany",
           classes: "bg-[#00D9FF]/10 text-[#00D9FF] border-[#00D9FF]/30",
         };
       case "ACCEPTED":
@@ -159,7 +159,7 @@ export function QuoteDetail({
         saveAs === "DRAFT" ? "Zapisano jako szkic." : "Zapisano kosztorys."
       );
       if (isNew && typeof window !== "undefined") {
-        router.push("/quotes"); // odśwież listę; unikamy wielokrotnego tworzenia na "new"
+        router.push("/quotes");
       } else {
         router.refresh();
       }
@@ -171,7 +171,7 @@ export function QuoteDetail({
   };
 
   const handleSendToCustomer = async () => {
-    // removed "send to customer" action per request
+    
   };
 
   const handleDecision = async (decision: QuoteStatus) => {
@@ -200,7 +200,7 @@ export function QuoteDetail({
     try {
       await deleteQuote(initialQuote.id);
       setLastAction("Kosztorys usunięty.");
-      // opcjonalnie nawigacja wstecz
+      
       if (typeof window !== "undefined") {
         router.push("/quotes");
       }
