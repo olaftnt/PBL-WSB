@@ -125,10 +125,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
               <div className="hidden flex items-center gap-3">
                 {/* SEARCH (opcjonalnie) */}
-                <div className="hidden md:flex items-center gap-2 px-3 h-10 rounded-2xl bg-white/5 border border-white/10">
+                <div className=" md:flex items-center gap-2 px-3 h-10 rounded-2xl bg-white/5 border border-white/10">
                   <Search className="w-4 h-4 text-white/60" />
                   <input
-                    className="hidden bg-transparent outline-none text-sm placeholder:text-white/40 w-56"
+                    className=" bg-transparent outline-none text-sm placeholder:text-white/40 w-56"
                     placeholder="Szukaj..."
                   />
                 </div>
