@@ -2,14 +2,33 @@
 
 import { useRouter } from "next/navigation";
 import { viewToPath } from "@/lib/viewRouter";
-import { Dashboard, DashboardStats } from "@/components/Dashboard";
+import { Dashboard, type DashboardStats } from "@/components/Dashboard";
+import type { TicketPriority, TicketStatus, SLATYPE } from "@prisma/client";
 
-export default function DashboardClient({ stats }: { stats: DashboardStats }) {
+type RecentTicketRow = {
+  id: string;
+  number: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  slaType: SLATYPE;
+  createdAt: string | Date;
+
+  customer: { name: string };
+  device: { name: string } | null;
+};
+
+export default function DashboardClient({
+  stats,
+  recentTickets,
+}: {
+  stats: DashboardStats;
+  recentTickets: RecentTicketRow[];
+}) {
   const router = useRouter();
 
   const onNavigate = (view: any, id?: string) => {
     router.push(viewToPath(view, id));
   };
 
-  return <Dashboard onNavigate={onNavigate} statsData={stats} />;
+  return <Dashboard onNavigate={onNavigate} statsData={stats} recentTickets={recentTickets} />;
 }

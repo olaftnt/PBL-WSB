@@ -19,7 +19,23 @@ export default async function DashboardPage() {
       slaType: true,
       createdAt: true,
       updatedAt: true,
-    }
+    },
+  });
+
+  // ✅ Najnowsze zgłoszenia (realne dane do Dashboard)
+  const recentTickets = await prisma.ticket.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: {
+      id: true,
+      number: true,
+      status: true,
+      priority: true,
+      slaType: true,
+      createdAt: true,
+      customer: { select: { name: true } },
+      device: { select: { name: true } },
+    },
   });
 
   const now = new Date();
@@ -31,7 +47,7 @@ export default async function DashboardPage() {
   let doneTodayCount = 0;
 
   allTickets.forEach((ticket) => {
-    if (ticket.status === 'DONE') {
+    if (ticket.status === "DONE") {
       if (ticket.updatedAt >= startOfToday) {
         doneTodayCount++;
       }
@@ -43,13 +59,12 @@ export default async function DashboardPage() {
       const duration = SLA_LIMITS[ticket.slaType] || { days: 5 };
       const deadline = add(ticket.createdAt, duration);
       const isBreached = isPast(deadline);
-      
+
       let warningThresholdHours = 4;
-      if (ticket.slaType === 'STANDARD') warningThresholdHours = 6;
-      else if (ticket.slaType === 'WARRANTY') warningThresholdHours = 12;
-      
+      if (ticket.slaType === "STANDARD") warningThresholdHours = 6;
+      else if (ticket.slaType === "WARRANTY") warningThresholdHours = 12;
+
       const warningTime = addHours(now, warningThresholdHours);
-      
       const isAtRisk = !isBreached && isBefore(deadline, warningTime);
 
       if (isAtRisk) {
@@ -62,8 +77,8 @@ export default async function DashboardPage() {
     total: allTickets.length,
     active: activeCount,
     risk: riskCount,
-    doneToday: doneTodayCount
+    doneToday: doneTodayCount,
   };
 
-  return <DashboardClient stats={dashboardStats} />;
+  return <DashboardClient stats={dashboardStats} recentTickets={recentTickets} />;
 }
