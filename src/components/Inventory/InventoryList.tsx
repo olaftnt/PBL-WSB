@@ -226,7 +226,6 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
               <tr className="border-b border-[#1A2642]">
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">SKU</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Nazwa</th>
-                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Kategoria</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Ilość</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Min. ilość</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Zarezerw.</th>
@@ -277,12 +276,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => openReserve(part)}
-                          className="p-2 text-[#94A3B8] hover:text-[#00D9FF] transition-colors"
-                        >
-                          <BookmarkPlus className="w-4 h-4" />
-                        </button>
+
                         <button
                           onClick={() => openConsume(part)}
                           className="p-2 text-[#94A3B8] hover:text-[#FF6B35] transition-colors"

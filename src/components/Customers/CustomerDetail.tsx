@@ -331,7 +331,7 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
                   disabled={isSaving}
                   className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
                 >
-                  Cancel
+                  Anuluj
                 </button>
               </div>
             </form>

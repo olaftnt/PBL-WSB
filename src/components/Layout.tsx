@@ -28,7 +28,7 @@ const menuItems = [
   { id: 'sla' as View, label: 'SLA i Śledzenie', icon: Clock },
   { id: 'inventory' as View, label: 'Magazyn', icon: Package },
   { id: 'quotes' as View, label: 'Kosztorysy', icon: FileText },
-  { id: 'admin' as View, label: 'Panel admina', icon: Settings },
+  //{ id: 'admin' as View, label: 'Panel admina', icon: Settings },
 ];
 
 export function Layout({ children, currentView, onNavigate }: LayoutProps) {
