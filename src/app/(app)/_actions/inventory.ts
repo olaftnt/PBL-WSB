@@ -17,11 +17,11 @@ export async function createPart(input: PartInput) {
   const minQuantity = Number(input.minQuantity ?? 0);
   const price = Number(input.price ?? 0);
 
-  if (!sku) throw new Error('SKU is required');
-  if (!name) throw new Error('Name is required');
-  if (Number.isNaN(quantity) || quantity < 0) throw new Error('Quantity must be >= 0');
-  if (Number.isNaN(minQuantity) || minQuantity < 0) throw new Error('Min quantity must be >= 0');
-  if (Number.isNaN(price) || price < 0) throw new Error('Price must be >= 0');
+  if (!sku) throw new Error('SKU jest wymagane');
+  if (!name) throw new Error('Nazwa jest wymagana');
+  if (Number.isNaN(quantity) || quantity < 0) throw new Error('Ilość musi być większa lub równa 0');
+  if (Number.isNaN(minQuantity) || minQuantity < 0) throw new Error('Minimalna ilość musi być większa lub równa 0');
+  if (Number.isNaN(price) || price < 0) throw new Error('Cena musi być większa lub równa 0');
 
   const created = await prisma.part.create({ data: { sku, name, quantity, minQuantity, price } });
   return {
@@ -37,32 +37,32 @@ export async function createPart(input: PartInput) {
 }
 
 export async function updatePart(id: string, input: Partial<PartInput>) {
-  if (!id) throw new Error('Part id is required');
+  if (!id) throw new Error('ID części jest wymagane');
   const data: any = {};
 
   if (input.sku !== undefined) {
     const sku = input.sku?.trim();
-    if (!sku) throw new Error('SKU is required');
+    if (!sku) throw new Error('SKU jest wymagane');
     data.sku = sku;
   }
   if (input.name !== undefined) {
     const name = input.name?.trim();
-    if (!name) throw new Error('Name is required');
+    if (!name) throw new Error('Nazwa jest wymagana');
     data.name = name;
   }
   if (input.quantity !== undefined) {
     const q = Number(input.quantity);
-    if (Number.isNaN(q) || q < 0) throw new Error('Quantity must be >= 0');
+    if (Number.isNaN(q) || q < 0) throw new Error('Ilość musi być większa lub równa 0');
     data.quantity = q;
   }
   if (input.minQuantity !== undefined) {
     const q = Number(input.minQuantity);
-    if (Number.isNaN(q) || q < 0) throw new Error('Min quantity must be >= 0');
+    if (Number.isNaN(q) || q < 0) throw new Error('Minimalna ilość musi być większa lub równa 0');
     data.minQuantity = q;
   }
   if (input.price !== undefined) {
     const p = Number(input.price);
-    if (Number.isNaN(p) || p < 0) throw new Error('Price must be >= 0');
+    if (Number.isNaN(p) || p < 0) throw new Error('Cena musi być większa lub równa 0');
     data.price = p;
   }
 
@@ -80,17 +80,17 @@ export async function updatePart(id: string, input: Partial<PartInput>) {
 }
 
 export async function reservePart(partId: string, ticketId: string, quantity: number) {
-  if (!partId) throw new Error('partId is required');
-  if (!ticketId) throw new Error('ticketId is required');
+  if (!partId) throw new Error('ID części jest wymagane');
+  if (!ticketId) throw new Error('ID zgłoszenia jest wymagane');
   const qty = Number(quantity);
-  if (Number.isNaN(qty) || qty <= 0) throw new Error('Quantity must be > 0');
+  if (Number.isNaN(qty) || qty <= 0) throw new Error('Ilość musi być większa od 0');
 
   return prisma.$transaction(async (tx) => {
     const part = await tx.part.findUnique({ where: { id: partId } });
-    if (!part) throw new Error('Part not found');
+    if (!part) throw new Error('Część nie została znaleziona');
 
     const available = part.quantity - part.reserved;
-    if (available < qty) throw new Error('Not enough available stock to reserve');
+    if (available < qty) throw new Error('Brak wystarczającej ilości w magazynie do rezerwacji');
 
     await tx.partReservation.create({
       data: { partId, ticketId, quantity: qty },
@@ -114,15 +114,15 @@ export async function reservePart(partId: string, ticketId: string, quantity: nu
 }
 
 export async function consumePart(partId: string, quantity: number) {
-  if (!partId) throw new Error('partId is required');
+  if (!partId) throw new Error('ID części jest wymagane');
   const qty = Number(quantity);
-  if (Number.isNaN(qty) || qty <= 0) throw new Error('Quantity must be > 0');
+  if (Number.isNaN(qty) || qty <= 0) throw new Error('Ilość musi być większa od 0');
 
   return prisma.$transaction(async (tx) => {
     const part = await tx.part.findUnique({ where: { id: partId } });
-    if (!part) throw new Error('Part not found');
+    if (!part) throw new Error('Część nie została znaleziona');
 
-    if (part.quantity < qty) throw new Error('Not enough stock to consume');
+    if (part.quantity < qty) throw new Error('Brak wystarczającej ilości w magazynie');
 
     const newReserved = Math.max(0, part.reserved - qty);
 
@@ -145,4 +145,3 @@ export async function consumePart(partId: string, quantity: number) {
     };
   });
 }
-
