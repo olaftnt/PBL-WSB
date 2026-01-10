@@ -29,7 +29,7 @@ const navItems: NavItem[] = [
   { href: '/sla', label: 'SLA & Tracking', icon: Clock },
   { href: '/inventory', label: 'Magazyn', icon: Package },
   { href: '/quotes', label: 'Kosztorysy', icon: FileText },
-  { href: '/admin', label: 'Admin', icon: Settings },
+  //{ href: '/admin', label: 'Admin', icon: Settings },
 ];
 
 function getTitleFromPath(pathname: string | null) {

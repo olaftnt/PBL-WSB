@@ -138,7 +138,7 @@ export function DeviceList({ onNavigate, devices, customers, onCreateDevice }: D
             <p className="text-[#64748B] text-sm mb-4">SN: {device.serial ?? '—'}</p>
             <div className="flex items-center justify-between pt-4 border-t border-[#1A2642]">
               <p className="text-[#94A3B8] text-sm">{device.customerName}</p>
-              <span className="text-[#64748B] text-xs">{device.tickets} napraw</span>
+              <span className="text-[#64748B] text-xs">Naprawy: {device.tickets}</span>
             </div>
           </button>
         ))}
