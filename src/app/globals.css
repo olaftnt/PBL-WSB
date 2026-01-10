@@ -6,3 +6,16 @@
 html, body {
   height: 100%;
 }
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none; 
+  margin: 0;
+}
+select {
+  -webkit-appearance: none; /* Chrome/Safari */
+  -moz-appearance: none;    /* Firefox */
+  appearance: none;         /* standard */
+  background-image: none;   /* usuwa natywną strzałkę tam, gdzie się da */
+  padding-right: 2.2em;     /* miejsce na własną strzałkę (jeśli dodasz) */
+}
