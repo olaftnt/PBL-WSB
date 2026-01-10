@@ -23,9 +23,17 @@ export async function createPart(input: PartInput) {
   if (Number.isNaN(minQuantity) || minQuantity < 0) throw new Error('Min quantity must be >= 0');
   if (Number.isNaN(price) || price < 0) throw new Error('Price must be >= 0');
 
-  return prisma.part.create({
-    data: { sku, name, quantity, minQuantity, price },
-  });
+  const created = await prisma.part.create({ data: { sku, name, quantity, minQuantity, price } });
+  return {
+    id: created.id,
+    sku: created.sku,
+    name: created.name,
+    quantity: created.quantity,
+    minQuantity: created.minQuantity,
+    price: Number(created.price ?? 0),
+    reserved: created.reserved,
+    createdAt: created.createdAt?.toISOString?.(),
+  };
 }
 
 export async function updatePart(id: string, input: Partial<PartInput>) {
@@ -58,7 +66,17 @@ export async function updatePart(id: string, input: Partial<PartInput>) {
     data.price = p;
   }
 
-  return prisma.part.update({ where: { id }, data });
+  const updated = await prisma.part.update({ where: { id }, data });
+  return {
+    id: updated.id,
+    sku: updated.sku,
+    name: updated.name,
+    quantity: updated.quantity,
+    minQuantity: updated.minQuantity,
+    price: Number(updated.price ?? 0),
+    reserved: updated.reserved,
+    createdAt: updated.createdAt?.toISOString?.(),
+  };
 }
 
 export async function reservePart(partId: string, ticketId: string, quantity: number) {
@@ -78,10 +96,20 @@ export async function reservePart(partId: string, ticketId: string, quantity: nu
       data: { partId, ticketId, quantity: qty },
     });
 
-    return tx.part.update({
+    const updated = await tx.part.update({
       where: { id: partId },
       data: { reserved: part.reserved + qty },
     });
+    return {
+      id: updated.id,
+      sku: updated.sku,
+      name: updated.name,
+      quantity: updated.quantity,
+      minQuantity: updated.minQuantity,
+      price: Number(updated.price ?? 0),
+      reserved: updated.reserved,
+      createdAt: updated.createdAt?.toISOString?.(),
+    };
   });
 }
 
@@ -98,13 +126,23 @@ export async function consumePart(partId: string, quantity: number) {
 
     const newReserved = Math.max(0, part.reserved - qty);
 
-    return tx.part.update({
+    const updated = await tx.part.update({
       where: { id: partId },
       data: {
         quantity: part.quantity - qty,
         reserved: newReserved,
       },
     });
+    return {
+      id: updated.id,
+      sku: updated.sku,
+      name: updated.name,
+      quantity: updated.quantity,
+      minQuantity: updated.minQuantity,
+      price: Number(updated.price ?? 0),
+      reserved: updated.reserved,
+      createdAt: updated.createdAt?.toISOString?.(),
+    };
   });
 }
 

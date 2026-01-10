@@ -1,7 +1,7 @@
 import type { QuoteStatus } from '@prisma/client';
 
 export type QuoteItemInput = {
-  id?: string;
+  id: string;
   partId?: string | null;
   description: string;
   quantity: number;
@@ -15,6 +15,7 @@ export type QuoteListItem = {
   customerName: string;
   ticketNumber: string;
   deviceName?: string | null;
+  notes?: string | null;
   totalGross: number;
   createdAt: string;
 };

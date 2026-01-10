@@ -20,6 +20,7 @@ export default async function Page() {
     ticketNumber: q.ticket.number,
     deviceName: q.device?.name ?? q.device?.model ?? null,
     totalGross: Number(q.totalGross ?? 0),
+    notes: q.notes ?? '',
     createdAt: q.createdAt.toISOString(),
   }));
 

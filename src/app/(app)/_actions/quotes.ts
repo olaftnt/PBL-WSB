@@ -115,7 +115,7 @@ export async function saveQuote(input: SaveQuoteInput) {
         }
       }
 
-      return tx.quote.update({
+      const updated = await tx.quote.update({
         where: { id },
         data: {
           ticketId,
@@ -130,7 +130,30 @@ export async function saveQuote(input: SaveQuoteInput) {
           totalVat: totals.vat,
           totalGross: totals.gross,
         },
+        include: { items: true },
       });
+
+      return {
+        id: updated.id,
+        status: updated.status,
+        ticketId: updated.ticketId,
+        customerId: updated.customerId,
+        deviceId: updated.deviceId,
+        laborHours: Number(updated.laborHours ?? 0),
+        laborRate: Number(updated.laborRate ?? 0),
+        vatRate: Number(updated.vatRate ?? 0),
+        notes: updated.notes ?? null,
+        totalNet: Number(updated.totalNet ?? 0),
+        totalVat: Number(updated.totalVat ?? 0),
+        totalGross: Number(updated.totalGross ?? 0),
+        items: (updated.items ?? []).map((it) => ({
+          id: it.id,
+          partId: it.partId,
+          description: it.description,
+          quantity: it.quantity,
+          unitPrice: Number(it.unitPrice ?? 0),
+        })),
+      };
     });
   }
 
