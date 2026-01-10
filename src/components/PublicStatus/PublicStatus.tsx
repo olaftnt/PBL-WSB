@@ -221,7 +221,7 @@ export function PublicStatus() {
                     </div>
                     <p className="text-[#94A3B8] text-sm">{result.estimatedCompletion}</p>
                   </div>
-                  <div className="bg-[#121B2D] rounded-xl p-6 border border-[#1A2642]">
+                  <div className="bg-[#121B2D] rounded-xl p-6 border border-[#1A2642] hidden">
                     <div className="flex items-center gap-3 mb-2">
                       <Package className="w-5 h-5 text-[#00FF88]" />
                       <p className="text-[#64748B] text-sm">Szacowany koszt</p>
