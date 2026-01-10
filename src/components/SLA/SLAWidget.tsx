@@ -80,7 +80,7 @@ export default function SLAWidget({ onNavigate }: SLAWidgetProps) {
 
                 {item.status === "BREACHED" && (
                   <div className="flex items-center gap-1 text-[#FF6B35] text-[10px] font-bold uppercase">
-                    <AlertTriangle className="w-3 h-3" /> Po czasie
+                    <AlertTriangle className="w-3 h-3" /> Przekroczono
                   </div>
                 )}
                 {item.status === "RISK" && (
@@ -90,7 +90,7 @@ export default function SLAWidget({ onNavigate }: SLAWidgetProps) {
                 )}
                 {item.status === "OK" && (
                   <div className="flex items-center gap-1 text-[#00FF88] text-[10px] font-bold uppercase">
-                    W toku
+                    W terminie
                   </div>
                 )}
               </div>

@@ -111,7 +111,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Device Information */}
+        {/* Informacje o urządzeniu */}
         <div className="space-y-6">
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <h3 className="text-white mb-4">Informacje o urządzeniu</h3>
@@ -265,7 +265,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
                   disabled={isSaving}
                   className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60"
                 >
-                  {isSaving ? 'Saving...' : 'Save changes'}
+                  {isSaving ? 'Zapisywanie...' : 'Zapisz zmiany'}
                 </button>
                 <button
                   type="button"
@@ -273,7 +273,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
                   disabled={isSaving}
                   className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
                 >
-                  Cancel
+                  Anuluj
                 </button>
               </div>
             </form>

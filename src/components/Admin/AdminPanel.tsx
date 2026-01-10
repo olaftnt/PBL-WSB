@@ -39,17 +39,17 @@ export function AdminPanel() {
   ];
 
   const analytics = [
-    { label: 'Daily Repairs', value: '15', change: '+12%', icon: BarChart3, color: 'from-[#00FF88] to-[#00CC6A]' },
-    { label: 'Monthly Repairs', value: '342', change: '+8%', icon: BarChart3, color: 'from-[#00D9FF] to-[#0099CC]' },
-    { label: 'Avg Repair Time', value: '4.2h', change: '-5%', icon: Clock, color: 'from-[#A78BFA] to-[#8B5CF6]' },
-    { label: 'Customer Satisfaction', value: '94%', change: '+3%', icon: TrendingUp, color: 'from-[#FFB800] to-[#CC9400]' },
+    { label: 'Naprawy (dziennie)', value: '15', change: '+12%', icon: BarChart3, color: 'from-[#00FF88] to-[#00CC6A]' },
+    { label: 'Naprawy (miesięcznie)', value: '342', change: '+8%', icon: BarChart3, color: 'from-[#00D9FF] to-[#0099CC]' },
+    { label: 'Średni czas naprawy', value: '4.2h', change: '-5%', icon: Clock, color: 'from-[#A78BFA] to-[#8B5CF6]' },
+    { label: 'Satysfakcja klienta', value: '94%', change: '+3%', icon: TrendingUp, color: 'from-[#FFB800] to-[#CC9400]' },
   ];
 
   const mostUsedParts = [
-    { name: 'iPhone 14 Pro Screen', uses: 45, trend: 'up' },
-    { name: 'MacBook Battery', uses: 32, trend: 'up' },
-    { name: 'Samsung Screen', uses: 28, trend: 'down' },
-    { name: 'USB-C Charger', uses: 24, trend: 'up' },
+    { name: 'Ekran iPhone 14 Pro', uses: 45, trend: 'up' },
+    { name: 'Bateria MacBook', uses: 32, trend: 'up' },
+    { name: 'Ekran Samsung', uses: 28, trend: 'down' },
+    { name: 'Ładowarka USB-C', uses: 24, trend: 'up' },
   ];
 
   const tabs = [
@@ -155,7 +155,7 @@ export function AdminPanel() {
 
       {activeTab === 'roles' && (
         <div className="space-y-6">
-          <h2 className="text-white">Roles & Access Control</h2>
+          <h2 className="text-white">Role i kontrola dostępu</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {roles.map((role) => (
               <div key={role.name} className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
@@ -168,9 +168,9 @@ export function AdminPanel() {
                   </button>
                 </div>
                 <h3 className="text-white mb-2">{role.name}</h3>
-                <p className="text-[#64748B] text-sm mb-4">{role.users} users assigned</p>
+                <p className="text-[#64748B] text-sm mb-4">Przypisanych użytkowników: {role.users}</p>
                 <div>
-                  <p className="text-[#94A3B8] text-sm mb-2">Permissions:</p>
+                  <p className="text-[#94A3B8] text-sm mb-2">Uprawnienia:</p>
                   <div className="flex flex-wrap gap-2">
                     {role.permissions.map((perm, index) => (
                       <span key={index} className="px-2 py-1 rounded text-xs bg-[#121B2D] text-[#94A3B8] border border-[#1A2642]">
@@ -187,7 +187,7 @@ export function AdminPanel() {
 
       {activeTab === 'sla' && (
         <div className="space-y-6">
-          <h2 className="text-white">SLA Configuration</h2>
+          <h2 className="text-white">Konfiguracja SLA</h2>
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <div className="space-y-4">
               {slaConfigs.map((sla) => (
@@ -203,10 +203,10 @@ export function AdminPanel() {
                     <div className="flex items-center gap-4">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" checked={sla.active} readOnly className="w-5 h-5" />
-                        <span className="text-[#94A3B8] text-sm">Active</span>
+                        <span className="text-[#94A3B8] text-sm">Aktywny</span>
                       </label>
                       <button className="px-4 py-2 bg-[#0C1222] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors">
-                        Edit
+                        Edytuj
                       </button>
                     </div>
                   </div>
@@ -219,15 +219,15 @@ export function AdminPanel() {
 
       {activeTab === 'notifications' && (
         <div className="space-y-6">
-          <h2 className="text-white">Notification Settings</h2>
+          <h2 className="text-white">Ustawienia powiadomień</h2>
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <div className="space-y-6">
               {[
-                { title: 'Email Notifications', description: 'Send email updates to customers and staff' },
-                { title: 'SMS Notifications', description: 'Send SMS alerts for important updates' },
-                { title: 'SLA Warnings', description: 'Alert when tickets are approaching deadlines' },
-                { title: 'Low Stock Alerts', description: 'Notify when parts inventory is running low' },
-                { title: 'New Ticket Alerts', description: 'Notify staff when new tickets are created' },
+                { title: 'Powiadomienia Email', description: 'Wysyłaj aktualizacje e-mail do klientów i pracowników' },
+                { title: 'Powiadomienia SMS', description: 'Wysyłaj alerty SMS o ważnych aktualizacjach' },
+                { title: 'Ostrzeżenia SLA', description: 'Alertuj, gdy zgłoszenia zbliżają się do terminów' },
+                { title: 'Alerty o niskim stanie zapasów', description: 'Powiadamiaj, gdy kończą się części w magazynie' },
+                { title: 'Alerty o nowych zgłoszeniach', description: 'Powiadamiaj personel o utworzeniu nowych zgłoszeń' },
               ].map((setting, index) => (
                 <div key={index} className="flex items-start justify-between py-4 border-b border-[#1A2642] last:border-0">
                   <div>
@@ -247,7 +247,7 @@ export function AdminPanel() {
 
       {activeTab === 'analytics' && (
         <div className="space-y-6">
-          <h2 className="text-white">System Analytics</h2>
+          <h2 className="text-white">Analityka systemowa</h2>
           
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -270,7 +270,7 @@ export function AdminPanel() {
 
           {/* Most Used Parts */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-6">Most Used Parts (This Month)</h3>
+            <h3 className="text-white mb-6">Najczęściej używane części (w tym miesiącu)</h3>
             <div className="space-y-4">
               {mostUsedParts.map((part, index) => (
                 <div key={index} className="flex items-center justify-between">
@@ -278,7 +278,7 @@ export function AdminPanel() {
                     <span className="text-[#64748B]">#{index + 1}</span>
                     <div>
                       <p className="text-white">{part.name}</p>
-                      <p className="text-[#64748B] text-sm">{part.uses} uses</p>
+                      <p className="text-[#64748B] text-sm">{part.uses} użyć</p>
                     </div>
                   </div>
                   <TrendingUp className={`w-5 h-5 ${part.trend === 'up' ? 'text-[#00FF88]' : 'text-[#FF6B35] rotate-180'}`} />
@@ -289,12 +289,12 @@ export function AdminPanel() {
 
           {/* Chart Placeholder */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-6">Monthly Performance</h3>
+            <h3 className="text-white mb-6">Miesięczna wydajność</h3>
             <div className="h-64 flex items-center justify-center border-2 border-dashed border-[#1A2642] rounded-lg">
               <div className="text-center">
                 <BarChart3 className="w-12 h-12 text-[#64748B] mx-auto mb-3" />
-                <p className="text-[#94A3B8]">Chart visualization would go here</p>
-                <p className="text-[#64748B] text-sm">(Use recharts library for implementation)</p>
+                <p className="text-[#94A3B8]">Wizualizacja wykresu pojawi się tutaj</p>
+                <p className="text-[#64748B] text-sm">(Użyj biblioteki recharts do wdrożenia)</p>
               </div>
             </div>
           </div>

@@ -462,10 +462,10 @@ export function TicketDetail({ ticket, deadline, onBack, onUpdateStatus, onAddNo
                     onChange={(e) => setEditState({ ...editState, priority: e.target.value as TicketPriority })}
                     className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88]"
                   >
-                    <option value="LOW">LOW</option>
-                    <option value="NORMAL">NORMAL</option>
-                    <option value="HIGH">HIGH</option>
-                    <option value="CRITICAL">CRITICAL</option>
+                    <option value="LOW">Niski</option>
+                    <option value="NORMAL">Normalny</option>
+                    <option value="HIGH">Wysoki</option>
+                    <option value="CRITICAL">Krytyczny</option>
                   </select>
                 </div>
 
@@ -476,10 +476,10 @@ export function TicketDetail({ ticket, deadline, onBack, onUpdateStatus, onAddNo
                     onChange={(e) => setEditState({ ...editState, slaType: e.target.value as SLATYPE })}
                     className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88]"
                   >
-                    <option value="STANDARD">STANDARD</option>
-                    <option value="EXPRESS">EXPRESS</option>
+                    <option value="STANDARD">Standard</option>
+                    <option value="EXPRESS">Ekspres</option>
                     <option value="VIP">VIP</option>
-                    <option value="WARRANTY">WARRANTY</option>
+                    <option value="WARRANTY">Gwarancja</option>
                   </select>
                 </div>
               </div>
