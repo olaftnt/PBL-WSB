@@ -2,23 +2,45 @@
 
 import { useRouter } from 'next/navigation';
 import type { TicketStatus, TicketPriority, SLATYPE } from '@prisma/client';
-import { updateTicketStatus, addTicketNote, updateTicket, deleteTicket } from '@/app/(app)/_actions/tickets';
+import {
+  updateTicketStatus,
+  addTicketNote,
+  updateTicket,
+  deleteTicket,
+  completeTicketWithProtocol,
+} from '@/app/(app)/_actions/tickets';
 import { TicketDetail } from '@/components/TicketManagement/TicketDetail';
 
-export default function TicketDetailClient({ ticket, deadline }: { ticket: any, deadline: string }) {
+export default function TicketDetailClient({
+  ticket,
+  deadline,
+}: {
+  ticket: any;
+  deadline: string;
+}) {
   const router = useRouter();
 
   return (
     <TicketDetail
       ticket={ticket}
-      deadline={deadline} 
+      deadline={deadline}
       onBack={() => router.push('/tickets')}
       onUpdateStatus={async (status: TicketStatus) => {
-        await updateTicketStatus({ id: ticket.id, status, author: 'user' });
+        await updateTicketStatus({
+          id: ticket.id,
+          status,
+          author: 'user',
+        });
+
         router.refresh();
       }}
       onAddNote={async (message: string) => {
-        await addTicketNote({ ticketId: ticket.id, message, author: 'user' });
+        await addTicketNote({
+          ticketId: ticket.id,
+          message,
+          author: 'user',
+        });
+
         router.refresh();
       }}
       onEdit={async (payload: {
@@ -38,11 +60,26 @@ export default function TicketDetailClient({ ticket, deadline }: { ticket: any, 
           physicalCondition: payload.physicalCondition,
           accessories: payload.accessories,
         });
+
         router.refresh();
       }}
       onDelete={async () => {
-        await deleteTicket({ id: ticket.id });
+        await deleteTicket({
+          id: ticket.id,
+        });
+
         router.push('/tickets');
+      }}
+      onCompleteWithProtocol={async (payload: {
+        ticketId: string;
+        performedWork: string;
+        servicePerson: string | null;
+      }) => {
+        const result = await completeTicketWithProtocol(payload);
+
+        router.refresh();
+
+        return result;
       }}
     />
   );
