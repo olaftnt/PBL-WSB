@@ -73,12 +73,13 @@ export default function TicketDetailClient({
       onCompleteWithProtocol={async (payload: {
         ticketId: string;
         performedWork: string;
-        repairCost: string;
         servicePerson: string | null;
       }) => {
-        await completeTicketWithProtocol(payload);
+        const result = await completeTicketWithProtocol(payload);
 
         router.refresh();
+
+        return result;
       }}
     />
   );

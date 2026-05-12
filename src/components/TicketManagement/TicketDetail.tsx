@@ -1173,28 +1173,25 @@ export function TicketDetail({
                   {protocolError}
                 </p>
 
-                <div className="bg-[#121B2D] border border-[#1A2642] rounded-lg p-3 mt-4">
-                  <p className="text-[#94A3B8] text-sm">
-                    Najpierw utwórz kosztorys dla tego zgłoszenia, a następnie wróć tutaj i ponownie wygeneruj protokół naprawy.
-                  </p>
-                </div>
 
                 <div className="flex justify-end gap-3 mt-6">
-                  <button
-                    onClick={() => setProtocolError(null)}
-                    className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88]"
-                  >
-                    Zamknij
-                  </button>
-
                   <button
                     onClick={() => {
                       setProtocolError(null);
                       setShowProtocol(false);
                     }}
-                    className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform"
+                    className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88]"
                   >
                     Rozumiem
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      window.location.href = '/quotes';
+                    }}
+                    className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform"
+                  >
+                    Przejdź do kosztorysów
                   </button>
                 </div>
               </div>
