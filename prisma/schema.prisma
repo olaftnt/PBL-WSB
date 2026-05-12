@@ -51,8 +51,8 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   devices Device[]
-  tickets  Ticket[]
-  quotes   Quote[]
+  tickets Ticket[]
+  quotes  Quote[]
 }
 
 model Device {
@@ -79,9 +79,10 @@ model Ticket {
   title       String
   description String?
 
-  status   TicketStatus   @default(NEW)
-  priority TicketPriority @default(NORMAL)
-  slaType  SLATYPE        @default(STANDARD)
+  status         TicketStatus    @default(NEW)
+  priority       TicketPriority  @default(NORMAL)
+  slaType        SLATYPE         @default(STANDARD)
+  repairProtocol RepairProtocol?
 
   physicalCondition String?
   accessories       String[] // Postgres array
@@ -92,9 +93,9 @@ model Ticket {
   customer Customer @relation(fields: [customerId], references: [id])
   device   Device?  @relation(fields: [deviceId], references: [id])
 
-  events TicketEvent[]
+  events           TicketEvent[]
   partReservations PartReservation[]
-  quotes Quote[]
+  quotes           Quote[]
 
   @@index([customerId])
   @@index([deviceId])
@@ -105,12 +106,12 @@ model Ticket {
 }
 
 model TicketEvent {
-  id        String         @id @default(cuid())
+  id        String          @id @default(cuid())
   ticketId  String
   type      TicketEventType
   message   String
   author    String?
-  createdAt DateTime       @default(now())
+  createdAt DateTime        @default(now())
 
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
@@ -119,15 +120,15 @@ model TicketEvent {
 }
 
 model Part {
-  id           String   @id @default(cuid())
-  sku          String   @unique
-  name         String
-  quantity     Int      @default(0)
-  minQuantity  Int      @default(0)
-  price        Decimal  @db.Decimal(10, 2)
-  reserved     Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  name        String
+  quantity    Int      @default(0)
+  minQuantity Int      @default(0)
+  price       Decimal  @db.Decimal(10, 2)
+  reserved    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   reservations PartReservation[]
   quoteItems   QuoteItem[]
@@ -169,9 +170,9 @@ model Quote {
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
-  customer Customer @relation(fields: [customerId], references: [id])
-  ticket   Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  device   Device?  @relation(fields: [deviceId], references: [id])
+  customer Customer    @relation(fields: [customerId], references: [id])
+  ticket   Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  device   Device?     @relation(fields: [deviceId], references: [id])
   items    QuoteItem[]
 
   @@index([status])
@@ -181,13 +182,13 @@ model Quote {
 }
 
 model QuoteItem {
-  id        String   @id @default(cuid())
-  quoteId   String
-  partId    String?
+  id          String  @id @default(cuid())
+  quoteId     String
+  partId      String?
   description String
-  quantity  Int
-  unitPrice Decimal
-  total     Decimal
+  quantity    Int
+  unitPrice   Decimal
+  total       Decimal
 
   quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   part  Part? @relation(fields: [partId], references: [id])
@@ -196,3 +197,16 @@ model QuoteItem {
   @@index([partId])
 }
 
+model RepairProtocol {
+  id String @id @default(cuid())
+
+  ticketId String @unique
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  performedWork String
+  repairCost    Decimal @db.Decimal(10, 2)
+  servicePerson String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

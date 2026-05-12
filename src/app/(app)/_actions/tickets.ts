@@ -67,6 +67,7 @@ export async function updateTicketStatus(input: { id: string; status: TicketStat
 
 export async function addTicketNote(input: { ticketId: string; message: string; author?: string }) {
   const msg = input.message?.trim();
+
   if (!input.ticketId) throw new Error('ID zgłoszenia jest wymagane');
   if (!msg) throw new Error('Wiadomość jest wymagana');
 
@@ -97,6 +98,7 @@ export async function updateTicket(input: UpdateTicketInput) {
   if (!input.id) throw new Error('ID jest wymagane');
 
   const data: any = {};
+
   if (typeof input.title === 'string') data.title = input.title.trim();
   if ('description' in input) data.description = input.description?.trim() || null;
   if (input.priority) data.priority = input.priority;
@@ -122,11 +124,104 @@ export async function updateTicket(input: UpdateTicketInput) {
   return updated;
 }
 
+export type CompleteTicketWithProtocolInput = {
+  ticketId: string;
+  performedWork: string;
+  repairCost: string;
+  servicePerson?: string | null;
+};
+
+export async function completeTicketWithProtocol(input: CompleteTicketWithProtocolInput) {
+  const performedWork = input.performedWork?.trim();
+  const repairCostRaw = input.repairCost?.trim().replace(',', '.');
+  const servicePerson = input.servicePerson?.trim() || null;
+
+  if (!input.ticketId) {
+    throw new Error('ID zgłoszenia jest wymagane');
+  }
+
+  if (!performedWork) {
+    throw new Error('Opis wykonanych prac jest wymagany');
+  }
+
+  if (!repairCostRaw) {
+    throw new Error('Kwota naprawy jest wymagana');
+  }
+
+  const repairCostNumber = Number(repairCostRaw);
+
+  if (Number.isNaN(repairCostNumber) || repairCostNumber < 0) {
+    throw new Error('Kwota naprawy jest nieprawidłowa');
+  }
+
+  const repairCost = repairCostNumber.toFixed(2);
+
+  const result = await prisma.$transaction(async (tx) => {
+    const protocol = await tx.repairProtocol.upsert({
+      where: {
+        ticketId: input.ticketId,
+      },
+      create: {
+        ticketId: input.ticketId,
+        performedWork,
+        repairCost,
+        servicePerson,
+      },
+      update: {
+        performedWork,
+        repairCost,
+        servicePerson,
+      },
+    });
+
+    const updatedTicket = await tx.ticket.update({
+      where: {
+        id: input.ticketId,
+      },
+      data: {
+        status: TicketStatus.DONE,
+      },
+    });
+
+    await tx.ticketEvent.create({
+      data: {
+        ticketId: input.ticketId,
+        type: TicketEventType.NOTE,
+        message:
+          `Wygenerowano protokół naprawy.\n\n` +
+          `Wykonane czynności:\n${performedWork}\n\n` +
+          `Kwota naprawy: ${repairCost} zł\n\n` +
+          `Serwisant: ${servicePerson || '—'}`,
+        author: servicePerson || 'system',
+      },
+    });
+
+    await tx.ticketEvent.create({
+      data: {
+        ticketId: input.ticketId,
+        type: TicketEventType.STATUS,
+        message: 'Zmieniono status na DONE',
+        author: servicePerson || 'system',
+      },
+    });
+
+    return {
+      ticket: updatedTicket,
+      protocol,
+    };
+  });
+
+  return result;
+}
+
 export async function deleteTicket(input: { id: string }) {
   if (!input.id) throw new Error('ID jest wymagane');
 
-  
-  await prisma.ticket.delete({ where: { id: input.id } });
+  await prisma.ticket.delete({
+    where: {
+      id: input.id,
+    },
+  });
 
   return { ok: true };
 }
