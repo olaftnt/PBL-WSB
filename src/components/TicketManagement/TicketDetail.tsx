@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   ArrowLeft,
   User,
@@ -13,12 +13,17 @@ import {
   Trash2,
   MessageSquare,
   X,
-  Printer
-} from 'lucide-react';
-import type { TicketStatus, TicketPriority, SLATYPE, TicketEventType } from '@prisma/client';
-import { TicketEventType as TicketEventTypeEnum } from '@prisma/client';
-import { formatDistanceToNow, isPast, isValid } from 'date-fns';
-import { pl } from 'date-fns/locale';
+  Printer,
+} from "lucide-react";
+import type {
+  TicketStatus,
+  TicketPriority,
+  SLATYPE,
+  TicketEventType,
+} from "@prisma/client";
+import { TicketEventType as TicketEventTypeEnum } from "@prisma/client";
+import { formatDistanceToNow, isPast, isValid } from "date-fns";
+import { pl } from "date-fns/locale";
 
 type TicketDetailModel = {
   id: string;
@@ -91,11 +96,11 @@ export function TicketDetail({
   onAddNote,
   onEdit,
   onDelete,
-  onCompleteWithProtocol
+  onCompleteWithProtocol,
 }: Props) {
   const [submittingStatus, setSubmittingStatus] = useState(false);
 
-  const [newNote, setNewNote] = useState('');
+  const [newNote, setNewNote] = useState("");
   const [submittingNote, setSubmittingNote] = useState(false);
 
   const [showEdit, setShowEdit] = useState(false);
@@ -108,46 +113,48 @@ export function TicketDetail({
   const [protocolSubmitting, setProtocolSubmitting] = useState(false);
   const [protocolError, setProtocolError] = useState<string | null>(null);
 
-  const [generatedRepairCost, setGeneratedRepairCost] = useState<string | null>(null);
+  const [generatedRepairCost, setGeneratedRepairCost] = useState<string | null>(
+    null,
+  );
 
   const [protocolState, setProtocolState] = useState(() => ({
-    performedWork: ticket.repairProtocol?.performedWork ?? '',
-    servicePerson: ticket.repairProtocol?.servicePerson ?? '',
+    performedWork: ticket.repairProtocol?.performedWork ?? "",
+    servicePerson: ticket.repairProtocol?.servicePerson ?? "",
   }));
 
   const [editState, setEditState] = useState(() => ({
-    title: ticket.title ?? '',
-    description: ticket.description ?? '',
+    title: ticket.title ?? "",
+    description: ticket.description ?? "",
     priority: ticket.priority,
     slaType: ticket.slaType,
-    physicalCondition: ticket.physicalCondition ?? '',
-    accessories: (ticket.accessories ?? []).join(', '),
+    physicalCondition: ticket.physicalCondition ?? "",
+    accessories: (ticket.accessories ?? []).join(", "),
   }));
 
   const fmt = (d: string | Date) => {
-    const dt = typeof d === 'string' ? new Date(d) : d;
+    const dt = typeof d === "string" ? new Date(d) : d;
     if (Number.isNaN(dt.getTime())) return String(d);
 
     const yyyy = dt.getFullYear();
-    const mm = String(dt.getMonth() + 1).padStart(2, '0');
-    const dd = String(dt.getDate()).padStart(2, '0');
-    const hh = String(dt.getHours()).padStart(2, '0');
-    const mi = String(dt.getMinutes()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, "0");
+    const dd = String(dt.getDate()).padStart(2, "0");
+    const hh = String(dt.getHours()).padStart(2, "0");
+    const mi = String(dt.getMinutes()).padStart(2, "0");
 
     return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
   };
 
   const escapeHtml = (value: unknown) => {
-    return String(value ?? '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   };
 
   const normalizeMoney = (value: string) => {
-    const cleaned = value.trim().replace(',', '.');
+    const cleaned = value.trim().replace(",", ".");
     const number = Number(cleaned);
 
     if (Number.isNaN(number)) return value;
@@ -155,15 +162,48 @@ export function TicketDetail({
     return number.toFixed(2);
   };
 
-  const statuses: Array<{ id: TicketStatus; label: string; color: string; bg: string }> = [
-    { id: 'NEW', label: 'Nowe', color: 'text-[#00D9FF]', bg: 'bg-[#00D9FF]/10' },
-    { id: 'IN_PROGRESS', label: 'W trakcie', color: 'text-[#A78BFA]', bg: 'bg-[#A78BFA]/10' },
-    { id: 'WAITING', label: 'Oczekujące', color: 'text-[#FFB800]', bg: 'bg-[#FFB800]/10' },
-    { id: 'DONE', label: 'Wykonane', color: 'text-[#00FF88]', bg: 'bg-[#00FF88]/10' },
-    { id: 'CANCELED', label: 'Anulowane', color: 'text-[#64748B]', bg: 'bg-[#64748B]/10' },
+  const statuses: Array<{
+    id: TicketStatus;
+    label: string;
+    color: string;
+    bg: string;
+  }> = [
+    {
+      id: "NEW",
+      label: "Nowe",
+      color: "text-[#00D9FF]",
+      bg: "bg-[#00D9FF]/10",
+    },
+    {
+      id: "IN_PROGRESS",
+      label: "W trakcie",
+      color: "text-[#A78BFA]",
+      bg: "bg-[#A78BFA]/10",
+    },
+    {
+      id: "WAITING",
+      label: "Oczekujące",
+      color: "text-[#FFB800]",
+      bg: "bg-[#FFB800]/10",
+    },
+    {
+      id: "DONE",
+      label: "Wykonane",
+      color: "text-[#00FF88]",
+      bg: "bg-[#00FF88]/10",
+    },
+    {
+      id: "CANCELED",
+      label: "Anulowane",
+      color: "text-[#64748B]",
+      bg: "bg-[#64748B]/10",
+    },
   ];
 
-  const currentStatusIndex = Math.max(0, statuses.findIndex((s) => s.id === ticket.status));
+  const currentStatusIndex = Math.max(
+    0,
+    statuses.findIndex((s) => s.id === ticket.status),
+  );
 
   const getActivityIcon = (type: TicketEventType) => {
     switch (type) {
@@ -179,26 +219,29 @@ export function TicketDetail({
   };
 
   const deadlineInfo = useMemo(() => {
-    if (ticket.status === 'DONE') {
-      return { label: 'Zakończono', color: 'text-[#00FF88]' };
+    if (ticket.status === "DONE") {
+      return { label: "Zakończono", color: "text-[#00FF88]" };
     }
 
-    if (ticket.status === 'CANCELED') {
-      return { label: 'Anulowano', color: 'text-[#64748B]' };
+    if (ticket.status === "CANCELED") {
+      return { label: "Anulowano", color: "text-[#64748B]" };
     }
 
     const dateObj = new Date(deadline);
 
     if (!isValid(dateObj)) {
-      return { label: '—', color: 'text-[#64748B]' };
+      return { label: "—", color: "text-[#64748B]" };
     }
 
     const isOverdue = isPast(dateObj);
-    const timeText = formatDistanceToNow(dateObj, { addSuffix: true, locale: pl });
+    const timeText = formatDistanceToNow(dateObj, {
+      addSuffix: true,
+      locale: pl,
+    });
 
     return {
       label: timeText,
-      color: isOverdue ? 'text-[#FF6B35] font-bold' : 'text-[#00D9FF]'
+      color: isOverdue ? "text-[#FF6B35] font-bold" : "text-[#00D9FF]",
     };
   }, [ticket.status, deadline]);
 
@@ -210,14 +253,14 @@ export function TicketDetail({
 
     try {
       await onAddNote(msg);
-      setNewNote('');
+      setNewNote("");
     } finally {
       setSubmittingNote(false);
     }
   };
 
   const setStatus = async (status: TicketStatus) => {
-    if (status === 'DONE') {
+    if (status === "DONE") {
       setShowProtocol(true);
       return;
     }
@@ -239,7 +282,7 @@ export function TicketDetail({
 
     try {
       const accessories = editState.accessories
-        .split(',')
+        .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
 
@@ -272,19 +315,23 @@ export function TicketDetail({
     const now = new Date();
 
     const performedWork = escapeHtml(
-      protocolState.performedWork.trim() || ticket.repairProtocol?.performedWork || '—'
+      protocolState.performedWork.trim() ||
+        ticket.repairProtocol?.performedWork ||
+        "—",
     );
 
     const repairCost = escapeHtml(
       normalizeMoney(
         repairCostFromAction ||
           generatedRepairCost ||
-          String(ticket.repairProtocol?.repairCost ?? '0')
-      )
+          String(ticket.repairProtocol?.repairCost ?? "0"),
+      ),
     );
 
     const servicePerson = escapeHtml(
-      protocolState.servicePerson.trim() || ticket.repairProtocol?.servicePerson || '—'
+      protocolState.servicePerson.trim() ||
+        ticket.repairProtocol?.servicePerson ||
+        "—",
     );
 
     const protocolHtml = `
@@ -481,17 +528,17 @@ export function TicketDetail({
             <div class="grid">
               <div>
                 <div class="field-label">Imię i nazwisko / nazwa</div>
-                <div class="field-value">${escapeHtml(ticket.customer.name || '—')}</div>
+                <div class="field-value">${escapeHtml(ticket.customer.name || "—")}</div>
               </div>
 
               <div>
                 <div class="field-label">Telefon</div>
-                <div class="field-value">${escapeHtml(ticket.customer.phone || '—')}</div>
+                <div class="field-value">${escapeHtml(ticket.customer.phone || "—")}</div>
               </div>
 
               <div>
                 <div class="field-label">E-mail</div>
-                <div class="field-value">${escapeHtml(ticket.customer.email || '—')}</div>
+                <div class="field-value">${escapeHtml(ticket.customer.email || "—")}</div>
               </div>
 
               <div>
@@ -506,34 +553,34 @@ export function TicketDetail({
             <div class="grid">
               <div>
                 <div class="field-label">Urządzenie</div>
-                <div class="field-value">${escapeHtml(ticket.device?.name || '—')}</div>
+                <div class="field-value">${escapeHtml(ticket.device?.name || "—")}</div>
               </div>
 
               <div>
                 <div class="field-label">Model</div>
-                <div class="field-value">${escapeHtml(ticket.device?.model || '—')}</div>
+                <div class="field-value">${escapeHtml(ticket.device?.model || "—")}</div>
               </div>
 
               <div>
                 <div class="field-label">Numer seryjny</div>
-                <div class="field-value">${escapeHtml(ticket.device?.serial || '—')}</div>
+                <div class="field-value">${escapeHtml(ticket.device?.serial || "—")}</div>
               </div>
 
               <div>
                 <div class="field-label">Akcesoria</div>
-                <div class="field-value">${escapeHtml(ticket.accessories?.length ? ticket.accessories.join(', ') : '—')}</div>
+                <div class="field-value">${escapeHtml(ticket.accessories?.length ? ticket.accessories.join(", ") : "—")}</div>
               </div>
             </div>
           </div>
 
           <div class="section">
             <div class="section-title">Opis zgłoszonego problemu</div>
-            <div class="box box-small">${escapeHtml(ticket.description || '—')}</div>
+            <div class="box box-small">${escapeHtml(ticket.description || "—")}</div>
           </div>
 
           <div class="section">
             <div class="section-title">Stan fizyczny urządzenia przy przyjęciu</div>
-            <div class="box box-small">${escapeHtml(ticket.physicalCondition || '—')}</div>
+            <div class="box box-small">${escapeHtml(ticket.physicalCondition || "—")}</div>
           </div>
 
           <div class="section">
@@ -583,10 +630,12 @@ export function TicketDetail({
       </html>
     `;
 
-    const printWindow = window.open('', '_blank', 'width=900,height=1200');
+    const printWindow = window.open("", "_blank", "width=900,height=1200");
 
     if (!printWindow) {
-      setProtocolError('Przeglądarka zablokowała okno drukowania. Zezwól na wyskakujące okna dla tej strony.');
+      setProtocolError(
+        "Przeglądarka zablokowała okno drukowania. Zezwól na wyskakujące okna dla tej strony.",
+      );
       return;
     }
 
@@ -612,7 +661,7 @@ export function TicketDetail({
       const repairCostFromAction =
         result?.repairCost ||
         result?.protocol?.repairCost?.toString?.() ||
-        String(ticket.repairProtocol?.repairCost ?? '0');
+        String(ticket.repairProtocol?.repairCost ?? "0");
 
       setGeneratedRepairCost(repairCostFromAction);
       printRepairProtocol(repairCostFromAction);
@@ -621,7 +670,7 @@ export function TicketDetail({
       const message =
         error instanceof Error
           ? error.message
-          : 'Nie udało się wygenerować protokołu. Sprawdź, czy zgłoszenie ma utworzony kosztorys.';
+          : "Nie udało się wygenerować protokołu. Sprawdź, czy zgłoszenie ma utworzony kosztorys.";
 
       setProtocolError(message);
     } finally {
@@ -634,7 +683,10 @@ export function TicketDetail({
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 text-[#94A3B8] hover:text-white transition-colors">
+          <button
+            onClick={onBack}
+            className="p-2 text-[#94A3B8] hover:text-white transition-colors"
+          >
             <ArrowLeft className="w-6 h-6" />
           </button>
 
@@ -691,16 +743,23 @@ export function TicketDetail({
             <div className="relative">
               <div className="flex items-center justify-between">
                 {statuses.map((status, index) => (
-                  <div key={status.id} className="flex flex-col items-center flex-1">
+                  <div
+                    key={status.id}
+                    className="flex flex-col items-center flex-1"
+                  >
                     <button
                       onClick={() => setStatus(status.id)}
                       disabled={submittingStatus}
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                         index <= currentStatusIndex
                           ? `${status.bg} ${status.color} border-2 border-current`
-                          : 'bg-[#121B2D] border-2 border-[#1A2642] text-[#64748B]'
-                      } ${submittingStatus ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      title={submittingStatus ? 'Aktualizuję...' : `Ustaw: ${status.label}`}
+                          : "bg-[#121B2D] border-2 border-[#1A2642] text-[#64748B]"
+                      } ${submittingStatus ? "opacity-60 cursor-not-allowed" : ""}`}
+                      title={
+                        submittingStatus
+                          ? "Aktualizuję..."
+                          : `Ustaw: ${status.label}`
+                      }
                     >
                       {index < currentStatusIndex ? (
                         <CheckCircle className="w-5 h-5" />
@@ -709,7 +768,9 @@ export function TicketDetail({
                       )}
                     </button>
 
-                    <span className={`mt-2 text-xs ${index <= currentStatusIndex ? status.color : 'text-[#64748B]'}`}>
+                    <span
+                      className={`mt-2 text-xs ${index <= currentStatusIndex ? status.color : "text-[#64748B]"}`}
+                    >
                       {status.label}
                     </span>
                   </div>
@@ -719,7 +780,9 @@ export function TicketDetail({
               <div className="absolute top-5 left-0 right-0 h-0.5 bg-[#1A2642] -z-10">
                 <div
                   className="h-full bg-gradient-to-r from-[#00FF88] to-[#00CC6A] transition-all duration-500"
-                  style={{ width: `${(currentStatusIndex / (statuses.length - 1)) * 100}%` }}
+                  style={{
+                    width: `${(currentStatusIndex / (statuses.length - 1)) * 100}%`,
+                  }}
                 />
               </div>
             </div>
@@ -734,8 +797,12 @@ export function TicketDetail({
 
             <div className="bg-[#121B2D] rounded-lg p-4 border border-[#1A2642]">
               <p className="text-white mb-2">{ticket.customer.name}</p>
-              <p className="text-[#94A3B8] text-sm mb-1">{ticket.customer.email ?? '—'}</p>
-              <p className="text-[#94A3B8] text-sm">{ticket.customer.phone ?? '—'}</p>
+              <p className="text-[#94A3B8] text-sm mb-1">
+                {ticket.customer.email ?? "—"}
+              </p>
+              <p className="text-[#94A3B8] text-sm">
+                {ticket.customer.phone ?? "—"}
+              </p>
             </div>
           </div>
 
@@ -750,22 +817,26 @@ export function TicketDetail({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[#64748B] text-sm mb-1">Nazwa</p>
-                  <p className="text-white">{ticket.device?.name ?? '—'}</p>
+                  <p className="text-white">{ticket.device?.name ?? "—"}</p>
                 </div>
 
                 <div>
                   <p className="text-[#64748B] text-sm mb-1">Model</p>
-                  <p className="text-white">{ticket.device?.model ?? '—'}</p>
+                  <p className="text-white">{ticket.device?.model ?? "—"}</p>
                 </div>
 
                 <div>
                   <p className="text-[#64748B] text-sm mb-1">SN</p>
-                  <p className="text-white">{ticket.device?.serial ?? '—'}</p>
+                  <p className="text-white">{ticket.device?.serial ?? "—"}</p>
                 </div>
 
                 <div>
                   <p className="text-[#64748B] text-sm mb-1">Akcesoria</p>
-                  <p className="text-white">{ticket.accessories?.length ? ticket.accessories.join(', ') : '—'}</p>
+                  <p className="text-white">
+                    {ticket.accessories?.length
+                      ? ticket.accessories.join(", ")
+                      : "—"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -774,13 +845,17 @@ export function TicketDetail({
           {/* Description */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <h3 className="text-white mb-4">Opis problemu</h3>
-            <p className="text-[#94A3B8] whitespace-pre-wrap">{ticket.description ?? '—'}</p>
+            <p className="text-[#94A3B8] whitespace-pre-wrap">
+              {ticket.description ?? "—"}
+            </p>
           </div>
 
           {/* Physical */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <h3 className="text-white mb-4">Stan fizyczny</h3>
-            <p className="text-[#94A3B8] whitespace-pre-wrap">{ticket.physicalCondition ?? '—'}</p>
+            <p className="text-[#94A3B8] whitespace-pre-wrap">
+              {ticket.physicalCondition ?? "—"}
+            </p>
           </div>
 
           {/* Existing Protocol */}
@@ -793,18 +868,26 @@ export function TicketDetail({
 
               <div className="bg-[#121B2D] rounded-lg p-4 border border-[#1A2642] space-y-4">
                 <div>
-                  <p className="text-[#64748B] text-sm mb-1">Wykonane czynności</p>
-                  <p className="text-white whitespace-pre-wrap">{ticket.repairProtocol.performedWork}</p>
+                  <p className="text-[#64748B] text-sm mb-1">
+                    Wykonane czynności
+                  </p>
+                  <p className="text-white whitespace-pre-wrap">
+                    {ticket.repairProtocol.performedWork}
+                  </p>
                 </div>
 
                 <div>
                   <p className="text-[#64748B] text-sm mb-1">Kwota naprawy</p>
-                  <p className="text-[#00FF88] text-lg">{String(ticket.repairProtocol.repairCost)} zł</p>
+                  <p className="text-[#00FF88] text-lg">
+                    {String(ticket.repairProtocol.repairCost)} zł
+                  </p>
                 </div>
 
                 <div>
                   <p className="text-[#64748B] text-sm mb-1">Serwisant</p>
-                  <p className="text-white">{ticket.repairProtocol.servicePerson ?? '—'}</p>
+                  <p className="text-white">
+                    {ticket.repairProtocol.servicePerson ?? "—"}
+                  </p>
                 </div>
 
                 <button
@@ -823,7 +906,9 @@ export function TicketDetail({
               <FileText className="w-5 h-5 text-[#FFB800]" />
               Powiązane informacje
             </h3>
-            <p className="text-[#64748B]">Historia poprzednich napraw: do wdrożenia.</p>
+            <p className="text-[#64748B]">
+              Historia poprzednich napraw: do wdrożenia.
+            </p>
           </div>
         </div>
 
@@ -842,7 +927,9 @@ export function TicketDetail({
                 <p className="text-[#64748B] text-sm mb-1">Czas realizacji</p>
                 <div className="flex items-center gap-2">
                   <Clock className={`w-4 h-4 ${deadlineInfo.color}`} />
-                  <p className={`${deadlineInfo.color} text-sm`}>{deadlineInfo.label}</p>
+                  <p className={`${deadlineInfo.color} text-sm`}>
+                    {deadlineInfo.label}
+                  </p>
                 </div>
               </div>
 
@@ -851,21 +938,22 @@ export function TicketDetail({
                 <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121B2D] border border-[#1A2642] text-[#94A3B8] text-sm">
                   <div
                     className={`w-2 h-2 rounded-full ${
-                      ticket.priority === 'CRITICAL' || ticket.priority === 'HIGH'
-                        ? 'bg-[#FF6B35]'
-                        : ticket.priority === 'NORMAL'
-                          ? 'bg-[#FFB800]'
-                          : 'bg-[#00D9FF]'
+                      ticket.priority === "CRITICAL" ||
+                      ticket.priority === "HIGH"
+                        ? "bg-[#FF6B35]"
+                        : ticket.priority === "NORMAL"
+                          ? "bg-[#FFB800]"
+                          : "bg-[#00D9FF]"
                     }`}
                   />
-                  {ticket.priority === 'CRITICAL'
-                    ? 'Krytyczny'
-                    : ticket.priority === 'HIGH'
-                      ? 'Wysoki'
-                      : ticket.priority === 'NORMAL'
-                        ? 'Normalny'
-                        : ticket.priority === 'LOW'
-                          ? 'Niski'
+                  {ticket.priority === "CRITICAL"
+                    ? "Krytyczny"
+                    : ticket.priority === "HIGH"
+                      ? "Wysoki"
+                      : ticket.priority === "NORMAL"
+                        ? "Normalny"
+                        : ticket.priority === "LOW"
+                          ? "Niski"
                           : ticket.priority}
                 </span>
               </div>
@@ -873,14 +961,14 @@ export function TicketDetail({
               <div>
                 <p className="text-[#64748B] text-sm mb-1">SLA</p>
                 <span className="inline-block px-3 py-1 rounded-full bg-[#64748B]/10 text-[#94A3B8] text-sm border border-[#64748B]/20">
-                  {ticket.slaType === 'STANDARD'
-                    ? 'Standard'
-                    : ticket.slaType === 'EXPRESS'
-                      ? 'Ekspres'
-                      : ticket.slaType === 'VIP'
-                        ? 'VIP'
-                        : ticket.slaType === 'WARRANTY'
-                          ? 'Gwarancja'
+                  {ticket.slaType === "STANDARD"
+                    ? "Standard"
+                    : ticket.slaType === "EXPRESS"
+                      ? "Ekspres"
+                      : ticket.slaType === "VIP"
+                        ? "VIP"
+                        : ticket.slaType === "WARRANTY"
+                          ? "Gwarancja"
                           : ticket.slaType}
                 </span>
               </div>
@@ -908,7 +996,7 @@ export function TicketDetail({
               disabled={submittingNote || !newNote.trim()}
               className="w-full py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {submittingNote ? 'Dodawanie…' : 'Dodaj notatkę'}
+              {submittingNote ? "Dodawanie…" : "Dodaj notatkę"}
             </button>
           </div>
 
@@ -916,17 +1004,38 @@ export function TicketDetail({
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <h3 className="text-white mb-4">Log aktywności</h3>
 
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div
+              className="
+    space-y-3 max-h-96 overflow-y-auto pr-2
+    [scrollbar-width:thin]
+    [scrollbar-color:#334155_#0C1222]
+    [&::-webkit-scrollbar]:w-2
+    [&::-webkit-scrollbar-track]:bg-[#0C1222]
+    [&::-webkit-scrollbar-track]:rounded-full
+    [&::-webkit-scrollbar-thumb]:bg-[#334155]
+    [&::-webkit-scrollbar-thumb]:rounded-full
+    [&::-webkit-scrollbar-thumb]:border-2
+    [&::-webkit-scrollbar-thumb]:border-[#0C1222]
+    hover:[&::-webkit-scrollbar-thumb]:bg-[#00FF88]/70
+  "
+            >
               {ticket.events?.length ? (
                 ticket.events.map((ev) => (
-                  <div key={ev.id} className="border-l-2 border-[#1A2642] pl-4 pb-3">
+                  <div
+                    key={ev.id}
+                    className="border-l-2 border-[#1A2642] pl-4 pb-3"
+                  >
                     <div className="flex items-start gap-2 mb-1">
-                      <div className="text-[#00FF88] mt-1">{getActivityIcon(ev.type)}</div>
+                      <div className="text-[#00FF88] mt-1">
+                        {getActivityIcon(ev.type)}
+                      </div>
 
                       <div className="flex-1">
-                        <p className="text-[#94A3B8] text-sm whitespace-pre-wrap">{ev.message}</p>
+                        <p className="text-[#94A3B8] text-sm whitespace-pre-wrap">
+                          {ev.message}
+                        </p>
                         <p className="text-[#64748B] text-xs mt-1">
-                          {(ev.author ?? '—')} • {fmt(ev.createdAt)}
+                          {ev.author ?? "—"} • {fmt(ev.createdAt)}
                         </p>
                       </div>
                     </div>
@@ -946,26 +1055,51 @@ export function TicketDetail({
           <div className="bg-[#0C1222] rounded-2xl border border-[#1A2642] max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-6 pb-4 border-b border-[#1A2642] shrink-0">
               <h3 className="text-white">Edytuj zgłoszenie</h3>
-              <button onClick={() => setShowEdit(false)} className="text-[#94A3B8] hover:text-white">
+              <button
+                onClick={() => setShowEdit(false)}
+                className="text-[#94A3B8] hover:text-white"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4 overflow-y-auto px-6 py-4">
+            <div
+              className="
+    space-y-4 overflow-y-auto px-6 py-4 pr-3
+    [scrollbar-width:thin]
+    [scrollbar-color:#334155_#0C1222]
+    [&::-webkit-scrollbar]:w-2
+    [&::-webkit-scrollbar-track]:bg-[#0C1222]
+    [&::-webkit-scrollbar-track]:rounded-full
+    [&::-webkit-scrollbar-thumb]:bg-[#334155]
+    [&::-webkit-scrollbar-thumb]:rounded-full
+    [&::-webkit-scrollbar-thumb]:border-2
+    [&::-webkit-scrollbar-thumb]:border-[#0C1222]
+    hover:[&::-webkit-scrollbar-thumb]:bg-[#00FF88]/70
+  "
+            >
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Tytuł</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">
+                  Tytuł
+                </label>
                 <input
                   value={editState.title}
-                  onChange={(e) => setEditState({ ...editState, title: e.target.value })}
+                  onChange={(e) =>
+                    setEditState({ ...editState, title: e.target.value })
+                  }
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88]"
                 />
               </div>
 
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Opis</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">
+                  Opis
+                </label>
                 <textarea
                   value={editState.description}
-                  onChange={(e) => setEditState({ ...editState, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditState({ ...editState, description: e.target.value })
+                  }
                   rows={4}
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] resize-none"
                 />
@@ -973,10 +1107,17 @@ export function TicketDetail({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Priorytet</label>
+                  <label className="block text-[#94A3B8] text-sm mb-2">
+                    Priorytet
+                  </label>
                   <select
                     value={editState.priority}
-                    onChange={(e) => setEditState({ ...editState, priority: e.target.value as TicketPriority })}
+                    onChange={(e) =>
+                      setEditState({
+                        ...editState,
+                        priority: e.target.value as TicketPriority,
+                      })
+                    }
                     className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88]"
                   >
                     <option value="LOW">Niski</option>
@@ -987,10 +1128,17 @@ export function TicketDetail({
                 </div>
 
                 <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">SLA</label>
+                  <label className="block text-[#94A3B8] text-sm mb-2">
+                    SLA
+                  </label>
                   <select
                     value={editState.slaType}
-                    onChange={(e) => setEditState({ ...editState, slaType: e.target.value as SLATYPE })}
+                    onChange={(e) =>
+                      setEditState({
+                        ...editState,
+                        slaType: e.target.value as SLATYPE,
+                      })
+                    }
                     className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88]"
                   >
                     <option value="STANDARD">Standard</option>
@@ -1002,20 +1150,31 @@ export function TicketDetail({
               </div>
 
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Stan fizyczny</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">
+                  Stan fizyczny
+                </label>
                 <textarea
                   value={editState.physicalCondition}
-                  onChange={(e) => setEditState({ ...editState, physicalCondition: e.target.value })}
+                  onChange={(e) =>
+                    setEditState({
+                      ...editState,
+                      physicalCondition: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Akcesoria oddzielone przecinkami</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">
+                  Akcesoria oddzielone przecinkami
+                </label>
                 <input
                   value={editState.accessories}
-                  onChange={(e) => setEditState({ ...editState, accessories: e.target.value })}
+                  onChange={(e) =>
+                    setEditState({ ...editState, accessories: e.target.value })
+                  }
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88]"
                 />
               </div>
@@ -1034,7 +1193,7 @@ export function TicketDetail({
                 disabled={savingEdit || !editState.title.trim()}
                 className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {savingEdit ? 'Zapisuję…' : 'Zapisz'}
+                {savingEdit ? "Zapisuję…" : "Zapisz"}
               </button>
             </div>
           </div>
@@ -1053,12 +1212,29 @@ export function TicketDetail({
                 </p>
               </div>
 
-              <button onClick={() => setShowProtocol(false)} className="text-[#94A3B8] hover:text-white">
+              <button
+                onClick={() => setShowProtocol(false)}
+                className="text-[#94A3B8] hover:text-white"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="overflow-y-auto px-6 py-4 space-y-4">
+            <div
+              className="
+    overflow-y-auto px-6 py-4 pr-3 space-y-4
+    [scrollbar-width:thin]
+    [scrollbar-color:#334155_#0C1222]
+    [&::-webkit-scrollbar]:w-2
+    [&::-webkit-scrollbar-track]:bg-[#0C1222]
+    [&::-webkit-scrollbar-track]:rounded-full
+    [&::-webkit-scrollbar-thumb]:bg-[#334155]
+    [&::-webkit-scrollbar-thumb]:rounded-full
+    [&::-webkit-scrollbar-thumb]:border-2
+    [&::-webkit-scrollbar-thumb]:border-[#0C1222]
+    hover:[&::-webkit-scrollbar-thumb]:bg-[#00FF88]/70
+  "
+            >
               <div className="bg-[#121B2D] rounded-lg p-4 border border-[#1A2642]">
                 <p className="text-[#94A3B8] text-sm mb-1">Klient</p>
                 <p className="text-white">{ticket.customer.name}</p>
@@ -1066,28 +1242,32 @@ export function TicketDetail({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div>
                     <p className="text-[#64748B] text-sm mb-1">Urządzenie</p>
-                    <p className="text-white">{ticket.device?.name ?? '—'}</p>
+                    <p className="text-white">{ticket.device?.name ?? "—"}</p>
                   </div>
 
                   <div>
                     <p className="text-[#64748B] text-sm mb-1">Model</p>
-                    <p className="text-white">{ticket.device?.model ?? '—'}</p>
+                    <p className="text-white">{ticket.device?.model ?? "—"}</p>
                   </div>
 
                   <div>
                     <p className="text-[#64748B] text-sm mb-1">Numer seryjny</p>
-                    <p className="text-white">{ticket.device?.serial ?? '—'}</p>
+                    <p className="text-white">{ticket.device?.serial ?? "—"}</p>
                   </div>
 
                   <div>
-                    <p className="text-[#64748B] text-sm mb-1">Numer zgłoszenia</p>
+                    <p className="text-[#64748B] text-sm mb-1">
+                      Numer zgłoszenia
+                    </p>
                     <p className="text-white">{ticket.number}</p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Co zostało wykonane?</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">
+                  Co zostało wykonane?
+                </label>
                 <textarea
                   value={protocolState.performedWork}
                   onChange={(e) =>
@@ -1103,16 +1283,21 @@ export function TicketDetail({
               </div>
 
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Kwota naprawy</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">
+                  Kwota naprawy
+                </label>
                 <div className="px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg">
                   <p className="text-[#94A3B8] text-sm">
-                    Kwota zostanie automatycznie pobrana z kosztorysu przypisanego do tego zgłoszenia.
+                    Kwota zostanie automatycznie pobrana z kosztorysu
+                    przypisanego do tego zgłoszenia.
                   </p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[#94A3B8] text-sm mb-2">Serwisant</label>
+                <label className="block text-[#94A3B8] text-sm mb-2">
+                  Serwisant
+                </label>
                 <input
                   value={protocolState.servicePerson}
                   onChange={(e) =>
@@ -1128,8 +1313,10 @@ export function TicketDetail({
 
               <div className="bg-[#121B2D] border border-[#1A2642] rounded-lg p-4">
                 <p className="text-[#94A3B8] text-sm">
-                  Po zatwierdzeniu system pobierze kwotę z kosztorysu, zapisze protokół w bazie danych,
-                  doda wpis do logu, oznaczy zgłoszenie jako wykonane i otworzy dokument gotowy do druku lub zapisu jako PDF.
+                  Po zatwierdzeniu system pobierze kwotę z kosztorysu, zapisze
+                  protokół w bazie danych, doda wpis do logu, oznaczy zgłoszenie
+                  jako wykonane i otworzy dokument gotowy do druku lub zapisu
+                  jako PDF.
                 </p>
               </div>
             </div>
@@ -1144,11 +1331,13 @@ export function TicketDetail({
 
               <button
                 onClick={completeWithProtocol}
-                disabled={protocolSubmitting || !protocolState.performedWork.trim()}
+                disabled={
+                  protocolSubmitting || !protocolState.performedWork.trim()
+                }
                 className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
               >
                 <Printer className="w-4 h-4" />
-                {protocolSubmitting ? 'Generuję…' : 'Zatwierdź i drukuj'}
+                {protocolSubmitting ? "Generuję…" : "Zatwierdź i drukuj"}
               </button>
             </div>
           </div>
@@ -1173,7 +1362,6 @@ export function TicketDetail({
                   {protocolError}
                 </p>
 
-
                 <div className="flex justify-end gap-3 mt-6">
                   <button
                     onClick={() => {
@@ -1187,7 +1375,7 @@ export function TicketDetail({
 
                   <button
                     onClick={() => {
-                      window.location.href = '/quotes';
+                      window.location.href = "/quotes";
                     }}
                     className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform"
                   >
@@ -1204,9 +1392,12 @@ export function TicketDetail({
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-md w-full">
-            <h3 className="text-white mb-3">Usunąć zgłoszenie {ticket.number}?</h3>
+            <h3 className="text-white mb-3">
+              Usunąć zgłoszenie {ticket.number}?
+            </h3>
             <p className="text-[#94A3B8] text-sm mb-6">
-              Ta operacja jest nieodwracalna. Usunie także log, notatki oraz protokół naprawy.
+              Ta operacja jest nieodwracalna. Usunie także log, notatki oraz
+              protokół naprawy.
             </p>
 
             <div className="flex justify-end gap-3">
@@ -1222,7 +1413,7 @@ export function TicketDetail({
                 disabled={deleting}
                 className="px-4 py-2 bg-[#121B2D] border border-[#FF6B35] rounded-lg text-[#FF6B35] hover:bg-[#FF6B35]/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {deleting ? 'Usuwanie…' : 'Usuń'}
+                {deleting ? "Usuwanie…" : "Usuń"}
               </button>
             </div>
           </div>
