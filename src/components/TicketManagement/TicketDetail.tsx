@@ -79,7 +79,6 @@ interface Props {
   onCompleteWithProtocol: (payload: {
     ticketId: string;
     performedWork: string;
-    repairCost: string;
     servicePerson: string | null;
   }) => Promise<any>;
 }
@@ -107,10 +106,12 @@ export function TicketDetail({
 
   const [showProtocol, setShowProtocol] = useState(false);
   const [protocolSubmitting, setProtocolSubmitting] = useState(false);
+  const [protocolError, setProtocolError] = useState<string | null>(null);
+
+  const [generatedRepairCost, setGeneratedRepairCost] = useState<string | null>(null);
 
   const [protocolState, setProtocolState] = useState(() => ({
     performedWork: ticket.repairProtocol?.performedWork ?? '',
-    repairCost: ticket.repairProtocol?.repairCost ? String(ticket.repairProtocol.repairCost) : '',
     servicePerson: ticket.repairProtocol?.servicePerson ?? '',
   }));
 
@@ -267,7 +268,7 @@ export function TicketDetail({
     }
   };
 
-  const printRepairProtocol = () => {
+  const printRepairProtocol = (repairCostFromAction?: string) => {
     const now = new Date();
 
     const performedWork = escapeHtml(
@@ -275,7 +276,11 @@ export function TicketDetail({
     );
 
     const repairCost = escapeHtml(
-      normalizeMoney(protocolState.repairCost || String(ticket.repairProtocol?.repairCost ?? '0'))
+      normalizeMoney(
+        repairCostFromAction ||
+          generatedRepairCost ||
+          String(ticket.repairProtocol?.repairCost ?? '0')
+      )
     );
 
     const servicePerson = escapeHtml(
@@ -581,7 +586,7 @@ export function TicketDetail({
     const printWindow = window.open('', '_blank', 'width=900,height=1200');
 
     if (!printWindow) {
-      alert('Przeglądarka zablokowała okno drukowania. Zezwól na wyskakujące okna dla tej strony.');
+      setProtocolError('Przeglądarka zablokowała okno drukowania. Zezwól na wyskakujące okna dla tej strony.');
       return;
     }
 
@@ -592,23 +597,33 @@ export function TicketDetail({
 
   const completeWithProtocol = async () => {
     const performedWork = protocolState.performedWork.trim();
-    const repairCost = protocolState.repairCost.trim();
 
     if (!performedWork) return;
-    if (!repairCost) return;
 
     setProtocolSubmitting(true);
 
     try {
-      await onCompleteWithProtocol({
+      const result = await onCompleteWithProtocol({
         ticketId: ticket.id,
         performedWork,
-        repairCost,
         servicePerson: protocolState.servicePerson.trim() || null,
       });
 
-      printRepairProtocol();
+      const repairCostFromAction =
+        result?.repairCost ||
+        result?.protocol?.repairCost?.toString?.() ||
+        String(ticket.repairProtocol?.repairCost ?? '0');
+
+      setGeneratedRepairCost(repairCostFromAction);
+      printRepairProtocol(repairCostFromAction);
       setShowProtocol(false);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Nie udało się wygenerować protokołu. Sprawdź, czy zgłoszenie ma utworzony kosztorys.';
+
+      setProtocolError(message);
     } finally {
       setProtocolSubmitting(false);
     }
@@ -632,7 +647,7 @@ export function TicketDetail({
         <div className="flex items-center gap-3 flex-wrap justify-end">
           {ticket.repairProtocol ? (
             <button
-              onClick={printRepairProtocol}
+              onClick={() => printRepairProtocol()}
               className="px-4 py-2 bg-[#121B2D] border border-[#00FF88] rounded-lg text-[#00FF88] hover:bg-[#00FF88]/10 transition-colors flex items-center gap-2"
             >
               <Printer className="w-4 h-4" />
@@ -793,7 +808,7 @@ export function TicketDetail({
                 </div>
 
                 <button
-                  onClick={printRepairProtocol}
+                  onClick={() => printRepairProtocol()}
                   className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform flex items-center gap-2"
                 >
                   <Printer className="w-4 h-4" />
@@ -1087,49 +1102,34 @@ export function TicketDetail({
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Kwota naprawy</label>
-
-                  <div className="relative">
-                    <input
-                      value={protocolState.repairCost}
-                      onChange={(e) =>
-                        setProtocolState({
-                          ...protocolState,
-                          repairCost: e.target.value,
-                        })
-                      }
-                      placeholder="Np. 250"
-                      className="w-full px-4 py-3 pr-12 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88]"
-                    />
-
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B]">
-                      zł
-                    </span>
-                  </div>
+              <div>
+                <label className="block text-[#94A3B8] text-sm mb-2">Kwota naprawy</label>
+                <div className="px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg">
+                  <p className="text-[#94A3B8] text-sm">
+                    Kwota zostanie automatycznie pobrana z kosztorysu przypisanego do tego zgłoszenia.
+                  </p>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-[#94A3B8] text-sm mb-2">Serwisant</label>
-                  <input
-                    value={protocolState.servicePerson}
-                    onChange={(e) =>
-                      setProtocolState({
-                        ...protocolState,
-                        servicePerson: e.target.value,
-                      })
-                    }
-                    placeholder="Imię i nazwisko serwisanta"
-                    className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88]"
-                  />
-                </div>
+              <div>
+                <label className="block text-[#94A3B8] text-sm mb-2">Serwisant</label>
+                <input
+                  value={protocolState.servicePerson}
+                  onChange={(e) =>
+                    setProtocolState({
+                      ...protocolState,
+                      servicePerson: e.target.value,
+                    })
+                  }
+                  placeholder="Imię i nazwisko serwisanta"
+                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88]"
+                />
               </div>
 
               <div className="bg-[#121B2D] border border-[#1A2642] rounded-lg p-4">
                 <p className="text-[#94A3B8] text-sm">
-                  Po zatwierdzeniu system zapisze protokół w bazie danych, doda wpis do logu,
-                  oznaczy zgłoszenie jako wykonane i otworzy dokument gotowy do druku lub zapisu jako PDF.
+                  Po zatwierdzeniu system pobierze kwotę z kosztorysu, zapisze protokół w bazie danych,
+                  doda wpis do logu, oznaczy zgłoszenie jako wykonane i otworzy dokument gotowy do druku lub zapisu jako PDF.
                 </p>
               </div>
             </div>
@@ -1144,12 +1144,60 @@ export function TicketDetail({
 
               <button
                 onClick={completeWithProtocol}
-                disabled={protocolSubmitting || !protocolState.performedWork.trim() || !protocolState.repairCost.trim()}
+                disabled={protocolSubmitting || !protocolState.performedWork.trim()}
                 className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
               >
                 <Printer className="w-4 h-4" />
                 {protocolSubmitting ? 'Generuję…' : 'Zatwierdź i drukuj'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PROTOCOL ERROR MODAL */}
+      {protocolError && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-[#0C1222] rounded-2xl border border-[#FF6B35] max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-full bg-[#FF6B35]/10 border border-[#FF6B35]/30 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-6 h-6 text-[#FF6B35]" />
+              </div>
+
+              <div className="flex-1">
+                <h3 className="text-white text-lg mb-2">
+                  Nie można wygenerować protokołu
+                </h3>
+
+                <p className="text-[#94A3B8] text-sm leading-relaxed">
+                  {protocolError}
+                </p>
+
+                <div className="bg-[#121B2D] border border-[#1A2642] rounded-lg p-3 mt-4">
+                  <p className="text-[#94A3B8] text-sm">
+                    Najpierw utwórz kosztorys dla tego zgłoszenia, a następnie wróć tutaj i ponownie wygeneruj protokół naprawy.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    onClick={() => setProtocolError(null)}
+                    className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88]"
+                  >
+                    Zamknij
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setProtocolError(null);
+                      setShowProtocol(false);
+                    }}
+                    className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform"
+                  >
+                    Rozumiem
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

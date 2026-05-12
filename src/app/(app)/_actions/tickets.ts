@@ -45,11 +45,17 @@ export async function createTicket(input: CreateTicketInput) {
   return created;
 }
 
-export async function updateTicketStatus(input: { id: string; status: TicketStatus; author?: string }) {
+export async function updateTicketStatus(input: {
+  id: string;
+  status: TicketStatus;
+  author?: string;
+}) {
   if (!input.id) throw new Error('ID jest wymagane');
 
   const updated = await prisma.ticket.update({
-    where: { id: input.id },
+    where: {
+      id: input.id,
+    },
     data: {
       status: input.status,
       events: {
@@ -65,7 +71,11 @@ export async function updateTicketStatus(input: { id: string; status: TicketStat
   return updated;
 }
 
-export async function addTicketNote(input: { ticketId: string; message: string; author?: string }) {
+export async function addTicketNote(input: {
+  ticketId: string;
+  message: string;
+  author?: string;
+}) {
   const msg = input.message?.trim();
 
   if (!input.ticketId) throw new Error('ID zgłoszenia jest wymagane');
@@ -103,18 +113,24 @@ export async function updateTicket(input: UpdateTicketInput) {
   if ('description' in input) data.description = input.description?.trim() || null;
   if (input.priority) data.priority = input.priority;
   if (input.slaType) data.slaType = input.slaType;
-  if ('physicalCondition' in input) data.physicalCondition = input.physicalCondition?.trim() || null;
+
+  if ('physicalCondition' in input) {
+    data.physicalCondition = input.physicalCondition?.trim() || null;
+  }
+
   if (Array.isArray(input.accessories)) data.accessories = input.accessories;
   if ('deviceId' in input) data.deviceId = input.deviceId ?? null;
 
   const updated = await prisma.ticket.update({
-    where: { id: input.id },
+    where: {
+      id: input.id,
+    },
     data: {
       ...data,
       events: {
         create: {
           type: TicketEventType.NOTE,
-          message: `Zaktualizowano dane zgłoszenia`,
+          message: 'Zaktualizowano dane zgłoszenia',
           author: 'user',
         },
       },
@@ -127,13 +143,11 @@ export async function updateTicket(input: UpdateTicketInput) {
 export type CompleteTicketWithProtocolInput = {
   ticketId: string;
   performedWork: string;
-  repairCost: string;
   servicePerson?: string | null;
 };
 
 export async function completeTicketWithProtocol(input: CompleteTicketWithProtocolInput) {
   const performedWork = input.performedWork?.trim();
-  const repairCostRaw = input.repairCost?.trim().replace(',', '.');
   const servicePerson = input.servicePerson?.trim() || null;
 
   if (!input.ticketId) {
@@ -144,19 +158,35 @@ export async function completeTicketWithProtocol(input: CompleteTicketWithProtoc
     throw new Error('Opis wykonanych prac jest wymagany');
   }
 
-  if (!repairCostRaw) {
-    throw new Error('Kwota naprawy jest wymagana');
-  }
-
-  const repairCostNumber = Number(repairCostRaw);
-
-  if (Number.isNaN(repairCostNumber) || repairCostNumber < 0) {
-    throw new Error('Kwota naprawy jest nieprawidłowa');
-  }
-
-  const repairCost = repairCostNumber.toFixed(2);
-
   const result = await prisma.$transaction(async (tx) => {
+    const quote = await tx.quote.findFirst({
+      where: {
+        ticketId: input.ticketId,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      select: {
+        id: true,
+        number: true,
+        totalGross: true,
+      },
+    });
+
+    if (!quote) {
+      throw new Error(
+        'Nie można wygenerować protokołu. Najpierw utwórz kosztorys dla tego zgłoszenia.'
+      );
+    }
+
+    const repairCost = quote.totalGross;
+
+    if (repairCost.lte(0)) {
+      throw new Error(
+        'Nie można wygenerować protokołu. Kwota brutto kosztorysu musi być większa niż 0 zł.'
+      );
+    }
+
     const protocol = await tx.repairProtocol.upsert({
       where: {
         ticketId: input.ticketId,
@@ -172,6 +202,9 @@ export async function completeTicketWithProtocol(input: CompleteTicketWithProtoc
         repairCost,
         servicePerson,
       },
+      select: {
+        id: true,
+      },
     });
 
     const updatedTicket = await tx.ticket.update({
@@ -181,6 +214,9 @@ export async function completeTicketWithProtocol(input: CompleteTicketWithProtoc
       data: {
         status: TicketStatus.DONE,
       },
+      select: {
+        id: true,
+      },
     });
 
     await tx.ticketEvent.create({
@@ -189,8 +225,9 @@ export async function completeTicketWithProtocol(input: CompleteTicketWithProtoc
         type: TicketEventType.NOTE,
         message:
           `Wygenerowano protokół naprawy.\n\n` +
+          `Kosztorys: ${quote.number}\n\n` +
           `Wykonane czynności:\n${performedWork}\n\n` +
-          `Kwota naprawy: ${repairCost} zł\n\n` +
+          `Kwota naprawy brutto: ${repairCost.toFixed(2)} zł\n\n` +
           `Serwisant: ${servicePerson || '—'}`,
         author: servicePerson || 'system',
       },
@@ -206,8 +243,12 @@ export async function completeTicketWithProtocol(input: CompleteTicketWithProtoc
     });
 
     return {
-      ticket: updatedTicket,
-      protocol,
+      ok: true,
+      ticketId: updatedTicket.id,
+      protocolId: protocol.id,
+      quoteId: quote.id,
+      quoteNumber: quote.number,
+      repairCost: repairCost.toFixed(2),
     };
   });
 
