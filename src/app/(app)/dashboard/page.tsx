@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { SLATYPE } from "@prisma/client";
 import { addHours, isPast, isBefore, add } from "date-fns";
 import DashboardClient from "./DashboardClient";
+import { auth } from "@/lib/auth/server";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 // Konfiguracja SLA
 const SLA_LIMITS = {
@@ -12,6 +16,12 @@ const SLA_LIMITS = {
 };
 
 export default async function DashboardPage() {
+  const { data: session } = await auth.getSession();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
   const allTickets = await prisma.ticket.findMany({
     select: {
       id: true,
@@ -22,7 +32,6 @@ export default async function DashboardPage() {
     },
   });
 
-  // ✅ Najnowsze zgłoszenia (realne dane do Dashboard)
   const recentTickets = await prisma.ticket.findMany({
     orderBy: { createdAt: "desc" },
     take: 5,
@@ -80,5 +89,10 @@ export default async function DashboardPage() {
     doneToday: doneTodayCount,
   };
 
-  return <DashboardClient stats={dashboardStats} recentTickets={recentTickets} />;
+  return (
+      <DashboardClient
+          stats={dashboardStats}
+          recentTickets={recentTickets}
+      />
+  );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Ticket,
@@ -16,7 +16,7 @@ import {
   Bell,
   Search,
 } from 'lucide-react';
-import { clearAuthedCookie } from '@/lib/auth';
+import { signOut } from '@/app/logout/actions';
 
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -48,7 +48,7 @@ function getTitleFromPath(pathname: string | null) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
+
   const title = getTitleFromPath(pathname);
 
   return (
@@ -99,17 +99,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <div className="hidden p-4 mt-auto border-t border-white/10">
-            <button
-              onClick={() => {
-                clearAuthedCookie();
-                router.replace('/login');
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-white/70 hover:text-white hover:bg-white/5 transition"
-            >
-              <LogOut className="w-5 h-5 text-white/60" />
-              <span className="text-sm font-medium">Logout</span>
-            </button>
+          <div className="p-4 mt-auto border-t border-white/10">
+            <form action={signOut}>
+              <button
+                  type="submit"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-white/70 hover:text-white hover:bg-white/5 transition"
+              >
+                <LogOut className="w-5 h-5 text-white/60" />
+                <span className="text-sm font-medium">Wyloguj</span>
+              </button>
+            </form>
           </div>
         </aside>
 
