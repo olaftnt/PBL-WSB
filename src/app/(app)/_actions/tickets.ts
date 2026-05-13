@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { TicketPriority, TicketStatus, SLATYPE, TicketEventType } from '@prisma/client';
 import { generateTicketNumber } from '@/lib/ticketNumber';
+import { sendStatusEmail } from '@/lib/send-status-email';
 
 export type CreateTicketInput = {
   customerId: string;
@@ -42,6 +43,19 @@ export async function createTicket(input: CreateTicketInput) {
     },
   });
 
+  const customer = await prisma.customer.findUnique({
+    where: { id: input.customerId },
+  });
+
+  if (customer?.email) {
+    await sendStatusEmail({
+      email: "pblwsb@o2.pl",
+      ticketNumber: created.number,
+      status: 'CREATED',
+      device: null,
+    });
+  }
+
   return created;
 }
 
@@ -51,6 +65,10 @@ export async function updateTicketStatus(input: {
   author?: string;
 }) {
   if (!input.id) throw new Error('ID jest wymagane');
+
+  const oldTicket = await prisma.ticket.findUnique({
+    where: { id: input.id },
+  });
 
   const updated = await prisma.ticket.update({
     where: {
@@ -66,7 +84,24 @@ export async function updateTicketStatus(input: {
         },
       },
     },
+
+    include: {
+      customer: true,
+      device: true,
+    },
   });
+
+  if (
+    oldTicket?.status !== input.status &&
+    updated.customer?.email
+  ) {
+    await sendStatusEmail({
+      email: "pblwsb@o2.pl",
+      ticketNumber: updated.number,
+      status: updated.status,
+      device: updated.device?.name,
+    });
+  }
 
   return updated;
 }
@@ -134,6 +169,11 @@ export async function updateTicket(input: UpdateTicketInput) {
           author: 'user',
         },
       },
+    },
+
+    include: {
+      customer: true,
+      device: true,
     },
   });
 

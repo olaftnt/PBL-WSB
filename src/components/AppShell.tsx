@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Ticket,
@@ -15,6 +15,7 @@ import {
   LogOut,
   Bell,
   Search,
+  BookOpen,
 } from 'lucide-react';
 import { signOut } from '@/app/logout/actions';
 
@@ -29,6 +30,7 @@ const navItems: NavItem[] = [
   { href: '/sla', label: 'SLA & Tracking', icon: Clock },
   { href: '/inventory', label: 'Magazyn', icon: Package },
   { href: '/quotes', label: 'Kosztorysy', icon: FileText },
+  { href: '/knowledge-base', label: 'Baza wiedzy', icon: BookOpen },
   //{ href: '/admin', label: 'Admin', icon: Settings },
 ];
 
@@ -42,12 +44,14 @@ function getTitleFromPath(pathname: string | null) {
   if (pathname.startsWith('/sla')) return 'SLA & Tracking';
   if (pathname.startsWith('/inventory')) return 'Magazyn';
   if (pathname.startsWith('/quotes')) return 'Kosztorysy';
+  if (pathname.startsWith('/knowledge-base')) return 'Baza wiedzy';
   if (pathname.startsWith('/admin')) return 'Admin';
   return 'SERWIS IT';
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const title = getTitleFromPath(pathname);
 
@@ -81,7 +85,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 (item.href === '/tickets' && pathname?.startsWith('/tickets')) ||
                 (item.href === '/customers' && pathname?.startsWith('/customers')) ||
                 (item.href === '/devices' && pathname?.startsWith('/devices')) ||
-                (item.href === '/quotes' && pathname?.startsWith('/quotes'));
+                (item.href === '/quotes' && pathname?.startsWith('/quotes')) ||
+                (item.href === '/knowledge-base' && pathname?.startsWith('/knowledge-base'));
 
               return (
                 <Link
@@ -99,11 +104,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
+          <div className="hidden p-4 mt-auto border-t border-white/10">
+            <button
+              onClick={() => {
+                router.replace('/login');
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-white/70 hover:text-white hover:bg-white/5 transition"
+            >
+              <LogOut className="w-5 h-5 text-white/60" />
+              <span className="text-sm font-medium">Logout</span>
+            </button>
+          </div>
+
           <div className="p-4 mt-auto border-t border-white/10">
             <form action={signOut}>
               <button
-                  type="submit"
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-white/70 hover:text-white hover:bg-white/5 transition"
+                type="submit"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-white/70 hover:text-white hover:bg-white/5 transition"
               >
                 <LogOut className="w-5 h-5 text-white/60" />
                 <span className="text-sm font-medium">Wyloguj</span>
