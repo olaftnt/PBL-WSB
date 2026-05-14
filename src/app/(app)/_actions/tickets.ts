@@ -282,6 +282,25 @@ export async function completeTicketWithProtocol(input: CompleteTicketWithProtoc
       },
     });
 
+    const fullTicket = await tx.ticket.findUnique({
+  where: {
+    id: input.ticketId,
+  },
+  include: {
+    customer: true,
+    device: true,
+  },
+});
+
+if (fullTicket?.customer?.email) {
+  await sendStatusEmail({
+    email: "pblwsb@o2.pl",
+    ticketNumber: fullTicket.number,
+    status: 'DONE',
+    device: fullTicket.device?.name,
+  });
+}
+
     return {
       ok: true,
       ticketId: updatedTicket.id,
