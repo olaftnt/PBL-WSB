@@ -17,7 +17,7 @@ import {
   Search,
   BookOpen,
 } from 'lucide-react';
-import { signOut } from '@/app/logout/actions';
+
 
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -54,6 +54,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const title = getTitleFromPath(pathname);
+  async function handleLogout() {
+    await fetch('/api/logout', {
+      method: 'POST',
+    });
+
+    router.replace('/login');
+    router.refresh();
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
@@ -117,15 +125,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="p-4 mt-auto border-t border-white/10">
-            <form action={signOut}>
-              <button
-                type="submit"
+            <button
+                type="button"
+                onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-white/70 hover:text-white hover:bg-white/5 transition"
-              >
-                <LogOut className="w-5 h-5 text-white/60" />
-                <span className="text-sm font-medium">Wyloguj</span>
-              </button>
-            </form>
+            >
+              <LogOut className="w-5 h-5 text-white/60" />
+              <span className="text-sm font-medium">Wyloguj</span>
+            </button>
           </div>
         </aside>
 
