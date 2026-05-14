@@ -68,7 +68,11 @@ const faqs: Entry[] = [
     short:
       "Procedura postępowania serwisanta przy zbliżającym się przekroczeniu czasu reakcji – eskalacja, komunikacja, dokumentacja.",
     full:
-      "test",
+      "1. Monitoruj SLA w systemie – zakładka „Zlecenia” pokazuje status każdego zgłoszenia i czas pozostały do przekroczenia SLA.\n\n" +
+      "2. Jeśli SLA jest zagrożone (np. mniej niż 1 godzina do przekroczenia), natychmiast poinformuj swojego przełożonego i zespół serwisowy – użyj dedykowanego kanału komunikacji (np. Slack) z informacją o zgłoszeniu i przewidywanym czasie przekroczenia.\n\n" +
+      "3. Skontaktuj się z klientem, informując o sytuacji i przewidywanym czasie rozwiązania problemu. Utrzymuj transparentną komunikację, aby zminimalizować frustrację klienta.\n\n" +
+      "4. Dokładnie udokumentuj wszystkie podjęte działania w systemie – dodaj notatki do zgłoszenia, opisując podjęte kroki, komunikację z klientem i wszelkie przeszkody napotkane podczas rozwiązywania problemu.\n\n" +
+      "5. Po rozwiązaniu problemu, przeprowadź analizę przyczyn przekroczenia SLA i wprowadź działania korygujące, aby zapobiec podobnym sytuacjom w przyszłości.",
     tag: "Proces",
     icon: ShieldAlert,
     accent: ACCENT_ORANGE,
@@ -101,7 +105,12 @@ const articles: Entry[] = [
     short:
       "Pełna ścieżka od przyjęcia urządzenia do wydania klientowi – statusy, dokumentacja, komunikacja, zamknięcie.",
     full:
-      "test sadaaaaaaaaaaaaaaaaaaaaasadas dsad daad sadsad sad asd asd as",
+      "1. Przyjęcie zgłoszenia – klient kontaktuje się z serwisem, zgłaszając problem. Serwisant rejestruje zgłoszenie w systemie, przypisując odpowiednie dane (klient, urządzenie, opis problemu) i nadaje status CREATED.\n\n" +
+      "2. Diagnoza – serwisant przeprowadza wstępną diagnozę, aktualizując status na IN_PROGRESS. W tym czasie może tworzyć kosztorys, zamawiać części i komunikować się z klientem.\n\n" +
+      "3. Naprawa – po akceptacji kosztorysu (jeśli wymagany) serwisant przystępuje do naprawy, dokumentując postęp i aktualizując status na IN_PROGRESS.\n\n" +
+      "4. Oczekiwanie na części – jeśli podczas naprawy okaże się, że potrzebne są dodatkowe części, serwisant aktualizuje status na WAITING i informuje klienta o przewidywanym czasie oczekiwania.\n\n" +
+      "5. Zakończenie naprawy – po zakończeniu prac serwisant aktualizuje status na DONE, generuje protokół naprawy i informuje klienta o możliwości odbioru urządzenia.\n\n" +
+      "6. Zamknięcie zgłoszenia – po odbiorze urządzenia przez klienta serwisant zamyka zgłoszenie, aktualizując status na CLOSED i dokumentując wszelkie uwagi końcowe.",
     tag: "Workflow",
     icon: Wrench,
     accent: ACCENT_CYAN,
@@ -112,7 +121,11 @@ const articles: Entry[] = [
     short:
       "Standardowa procedura diagnostyczna – kolejność testów, narzędzia, częste pułapki i sposób dokumentacji wyników.",
     full:
-      "test",
+      "1. Zbieranie informacji – zapytaj klienta o objawy, historię problemu i wszelkie wcześniejsze próby naprawy. Sprawdź dane urządzenia (model, specyfikacja) w systemie.\n\n" +
+      "2. Testy podstawowe – sprawdź zasilanie, połączenia, stan baterii (dla laptopów) i ewentualne uszkodzenia fizyczne. Użyj multimetru do pomiaru napięć i testowania komponentów.\n\n" +
+      "3. Diagnostyka oprogramowania – uruchom narzędzia diagnostyczne (np. MemTest86, CrystalDiskInfo) w celu sprawdzenia pamięci RAM, dysku twardego i innych komponentów. Zbadaj logi systemowe pod kątem błędów.\n\n" +
+      "4. Testy zaawansowane – jeśli podstawowe testy nie wykazały problemu, przeprowadź testy bardziej zaawansowane (np. testowanie płyty głównej, karty graficznej) przy użyciu specjalistycznych narzędzi diagnostycznych.\n\n" +
+      "5. Dokumentacja – dokładnie udokumentuj wszystkie przeprowadzone testy, wyniki i wnioski w systemie. Dodaj notatki do zgłoszenia, opisując każdy krok diagnostyki i jego rezultat.",
     tag: "Diagnostyka",
     icon: Cpu,
     accent: ACCENT_PURPLE,
