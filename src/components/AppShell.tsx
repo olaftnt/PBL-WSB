@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { TicketNotifications } from '@/components/TicketNotifications';
 import {
   LayoutDashboard,
   Ticket,
@@ -171,6 +172,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main className="flex-1 p-6 min-w-0">{children}</main>
         </div>
       </div>
+      <TicketNotifications />
     </div>
   );
 }
