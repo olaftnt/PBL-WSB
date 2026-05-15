@@ -25,7 +25,17 @@ export default async function Page() {
   // Pobieramy zgłoszenia
   const tickets = await prisma.ticket.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { customer: true, device: true },
+    include: {
+      customer: true,
+      device: true,
+      quotes: {
+        select: {
+          id: true,
+          status: true,
+          publicAccess: true,
+        },
+      },
+    },
   });
 
   // termin do każdego zgłoszenia

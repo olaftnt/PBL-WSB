@@ -12,6 +12,7 @@ export type QuoteListItem = {
   id: string;
   number: string;
   status: QuoteStatus;
+  publicAccess?: 'PUBLIC' | 'VIEW_ONLY' | 'HIDDEN';
   customerName: string;
   ticketNumber: string;
   deviceName?: string | null;
@@ -24,6 +25,7 @@ export type QuoteDetailData = {
   id: string;
   number: string;
   status: QuoteStatus;
+  publicAccess?: 'PUBLIC' | 'VIEW_ONLY' | 'HIDDEN';
   ticketId: string;
   ticketNumber: string;
   customerId: string;
@@ -64,6 +66,8 @@ export type TicketOption = {
   number: string;
   customerId?: string | null;
   customerName?: string | null;
+  deviceId?: string | null;
+  deviceName?: string | null;
 };
 
 export type CustomerOption = {

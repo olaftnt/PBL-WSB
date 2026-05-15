@@ -14,6 +14,8 @@ import {
   MessageSquare,
   X,
   Printer,
+  Plus,
+  Clipboard,
 } from "lucide-react";
 import type {
   TicketStatus,
@@ -64,6 +66,37 @@ type TicketDetailModel = {
     servicePerson?: string | null;
     createdAt: string | Date;
   } | null;
+
+  quotes?: Array<{
+    id: string;
+    number: string;
+    status: string;
+    totalGross: string | number;
+    updatedAt: string | Date;
+    items?: Array<{
+      id: string;
+    }>;
+  }>;
+
+  previousRepairs?: Array<{
+    id: string;
+    number: string;
+    title: string;
+    status: TicketStatus;
+    createdAt: string | Date;
+    repairProtocol?: {
+      repairCost: string | number;
+    } | null;
+  }>;
+
+  reservedParts?: Array<{
+    partId: string;
+    sku: string;
+    name: string;
+    quantity: number;
+    stockQuantity: number;
+    stockReserved: number;
+  }>;
 };
 
 interface Props {
@@ -81,6 +114,10 @@ interface Props {
     accessories: string[];
   }) => Promise<any>;
   onDelete: () => Promise<any>;
+  onOpenQuote: (id: string) => void;
+  onCreateQuote: () => void;
+  onOpenTicket: (id: string) => void;
+  onConsumeReservedPart: (partId: string) => Promise<any>;
   onCompleteWithProtocol: (payload: {
     ticketId: string;
     performedWork: string;
@@ -96,6 +133,10 @@ export function TicketDetail({
   onAddNote,
   onEdit,
   onDelete,
+  onOpenQuote,
+  onCreateQuote,
+  onOpenTicket,
+  onConsumeReservedPart,
   onCompleteWithProtocol,
 }: Props) {
   const [submittingStatus, setSubmittingStatus] = useState(false);
@@ -108,6 +149,8 @@ export function TicketDetail({
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [publicLinkCopied, setPublicLinkCopied] = useState(false);
+  const [consumingReservedPartId, setConsumingReservedPartId] = useState<string | null>(null);
 
   const [showProtocol, setShowProtocol] = useState(false);
   const [protocolSubmitting, setProtocolSubmitting] = useState(false);
@@ -218,6 +261,34 @@ export function TicketDetail({
     }
   };
 
+  const getQuoteStatusLabel = (status: string) => {
+    switch (status) {
+      case "DRAFT":
+        return "Szkic";
+      case "SENT":
+        return "Zapisany";
+      case "ACCEPTED":
+        return "Zaakceptowany";
+      case "REJECTED":
+        return "Odrzucony";
+      default:
+        return status;
+    }
+  };
+
+  const getQuoteStatusClasses = (status: string) => {
+    switch (status) {
+      case "SENT":
+        return "bg-[#00D9FF]/10 text-[#00D9FF] border-[#00D9FF]/30";
+      case "ACCEPTED":
+        return "bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/30";
+      case "REJECTED":
+        return "bg-[#FF6B35]/10 text-[#FF6B35] border-[#FF6B35]/30";
+      default:
+        return "bg-[#64748B]/10 text-[#94A3B8] border-[#64748B]/30";
+    }
+  };
+
   const deadlineInfo = useMemo(() => {
     if (ticket.status === "DONE") {
       return { label: "Zakończono", color: "text-[#00FF88]" };
@@ -308,6 +379,35 @@ export function TicketDetail({
       await onDelete();
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const consumeReservedPart = async (partId: string) => {
+    setConsumingReservedPartId(partId);
+
+    try {
+      await onConsumeReservedPart(partId);
+    } finally {
+      setConsumingReservedPartId(null);
+    }
+  };
+
+  const copyPublicStatusLink = async () => {
+    if (typeof window === "undefined") return;
+
+    const contact = ticket.customer.email || ticket.customer.phone || "";
+    const params = new URLSearchParams({
+      ticketNumber: ticket.number,
+      contactInfo: contact,
+    });
+    const link = `${window.location.origin}/public-status?${params.toString()}`;
+
+    try {
+      await navigator.clipboard.writeText(link);
+      setPublicLinkCopied(true);
+      window.setTimeout(() => setPublicLinkCopied(false), 2000);
+    } catch (error) {
+      console.error("Public status link copy failed", error);
     }
   };
 
@@ -716,6 +816,21 @@ export function TicketDetail({
           )}
 
           <button
+            type="button"
+            onClick={copyPublicStatusLink}
+            disabled={!ticket.customer.email && !ticket.customer.phone}
+            className="px-4 py-2 bg-[#121B2D] border border-[#00D9FF] rounded-lg text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={
+              ticket.customer.email || ticket.customer.phone
+                ? "Kopiuj link do publicznego statusu"
+                : "Klient nie ma emaila ani telefonu"
+            }
+          >
+            <Clipboard className="w-4 h-4" />
+            {publicLinkCopied ? "Skopiowano" : "Kopiuj link statusu"}
+          </button>
+
+          <button
             onClick={() => setShowEdit(true)}
             className="px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2"
           >
@@ -902,13 +1017,156 @@ export function TicketDetail({
           )}
 
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <h3 className="text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#FFB800]" />
+                Kosztorysy dla zlecenia
+              </h3>
+
+              <button
+                type="button"
+                onClick={onCreateQuote}
+                className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Nowy kosztorys
+              </button>
+            </div>
+
+            {ticket.quotes?.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {ticket.quotes.map((quote) => (
+                  <button
+                    key={quote.id}
+                    type="button"
+                    onClick={() => onOpenQuote(quote.id)}
+                    className="bg-[#121B2D] rounded-lg p-4 border border-[#1A2642] text-left hover:border-[#00FF88] transition-colors group"
+                  >
+                    <div className="flex flex-col gap-2 mb-3">
+                      <div className="min-w-0">
+                        <p className="text-[#64748B] text-xs mb-1">
+                          Kosztorys
+                        </p>
+                        <p className="text-white group-hover:text-[#00FF88] transition-colors break-words">
+                          {quote.number}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`w-fit max-w-full px-2 py-1 rounded-full text-xs border whitespace-normal break-words ${getQuoteStatusClasses(quote.status)}`}
+                      >
+                        {getQuoteStatusLabel(quote.status)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-end justify-between gap-3 pt-3 border-t border-[#1A2642]">
+                      <div>
+                        <p className="text-[#64748B] text-xs mb-1">
+                          Pozycje
+                        </p>
+                        <p className="text-[#94A3B8] text-sm">
+                          {quote.items?.length ?? 0}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-[#64748B] text-xs mb-1">
+                          Brutto
+                        </p>
+                        <p className="text-[#00FF88]">
+                          {Number(quote.totalGross ?? 0).toFixed(2)} zł
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-[#121B2D] rounded-lg p-4 border border-dashed border-[#1A2642]">
+                <p className="text-[#94A3B8] text-sm mb-3">
+                  Brak kosztorysów dla tego zlecenia.
+                </p>
+                <button
+                  type="button"
+                  onClick={onCreateQuote}
+                  className="px-4 py-2 bg-[#0C1222] border border-[#00FF88] rounded-lg text-[#00FF88] hover:bg-[#00FF88]/10 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Utwórz pierwszy kosztorys
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <h3 className="text-white mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5 text-[#FFB800]" />
               Powiązane informacje
             </h3>
-            <p className="text-[#64748B]">
-              Historia poprzednich napraw: do wdrożenia.
-            </p>
+
+            {ticket.previousRepairs?.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {ticket.previousRepairs.map((repair) => (
+                  <button
+                    key={repair.id}
+                    type="button"
+                    onClick={() => onOpenTicket(repair.id)}
+                    className="bg-[#121B2D] rounded-lg p-4 border border-[#1A2642] text-left hover:border-[#00FF88] transition-colors group"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0">
+                        <p className="text-[#64748B] text-xs mb-1">
+                          Poprzednia naprawa
+                        </p>
+                        <p className="text-white group-hover:text-[#00FF88] transition-colors">
+                          {repair.number}
+                        </p>
+                      </div>
+
+                      <span className="shrink-0 px-2 py-1 rounded-full text-xs border bg-[#64748B]/10 text-[#94A3B8] border-[#64748B]/30">
+                        {repair.status === "DONE"
+                          ? "Wykonane"
+                          : repair.status === "IN_PROGRESS"
+                            ? "W trakcie"
+                            : repair.status === "WAITING"
+                              ? "Oczekujące"
+                              : repair.status === "CANCELED"
+                                ? "Anulowane"
+                                : "Nowe"}
+                      </span>
+                    </div>
+
+                    <p className="text-[#94A3B8] text-sm line-clamp-2 mb-3">
+                      {repair.title}
+                    </p>
+
+                    <div className="flex items-end justify-between gap-3 pt-3 border-t border-[#1A2642]">
+                      <div>
+                        <p className="text-[#64748B] text-xs mb-1">Data</p>
+                        <p className="text-[#94A3B8] text-sm">
+                          {fmt(repair.createdAt)}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-[#64748B] text-xs mb-1">Koszt</p>
+                        <p className="text-[#00FF88]">
+                          {repair.repairProtocol?.repairCost
+                            ? `${Number(repair.repairProtocol.repairCost).toFixed(2)} zł`
+                            : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-[#121B2D] rounded-lg p-4 border border-dashed border-[#1A2642]">
+                <p className="text-[#64748B]">
+                  Brak poprzednich napraw dla tego urządzenia.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -973,6 +1231,55 @@ export function TicketDetail({
                 </span>
               </div>
             </div>
+          </div>
+
+          <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
+            <h3 className="text-white mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-[#FFB800]" />
+              Zarezerwowane części
+            </h3>
+
+            {ticket.reservedParts?.length ? (
+              <div className="space-y-3">
+                {ticket.reservedParts.map((reservedPart) => (
+                  <div
+                    key={reservedPart.partId}
+                    className="rounded-lg border border-[#1A2642] bg-[#121B2D] p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-white text-sm break-words">
+                          {reservedPart.sku} · {reservedPart.name}
+                        </p>
+                        <p className="text-[#64748B] text-xs mt-1">
+                          Rezerwacja: {reservedPart.quantity} szt. · Stan:{" "}
+                          {reservedPart.stockQuantity} szt.
+                        </p>
+                      </div>
+
+                      <span className="shrink-0 rounded-full border border-[#FFB800]/30 bg-[#FFB800]/10 px-2 py-1 text-xs text-[#FFB800]">
+                        {reservedPart.quantity} szt.
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => consumeReservedPart(reservedPart.partId)}
+                      disabled={consumingReservedPartId === reservedPart.partId}
+                      className="mt-3 w-full rounded-lg border border-[#00FF88]/30 bg-[#00FF88]/10 py-2 text-sm text-[#00FF88] transition-colors hover:bg-[#00FF88]/20 disabled:opacity-60"
+                    >
+                      {consumingReservedPartId === reservedPart.partId
+                        ? "Wydaję..."
+                        : "Wydaj z magazynu i usuń rezerwację"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[#64748B] text-sm">
+                Brak zarezerwowanych części dla tego zlecenia.
+              </p>
+            )}
           </div>
 
           {/* Add Note */}

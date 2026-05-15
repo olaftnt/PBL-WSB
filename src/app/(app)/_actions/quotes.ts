@@ -1,8 +1,9 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { QuoteStatus } from '@prisma/client';
+import { QuoteStatus, TicketEventType } from '@prisma/client';
 import type { QuoteItemInput } from '@/types/quote';
+import { releaseQuotePartReservations, reserveQuoteParts } from '@/lib/quoteReservations';
 
 const computeTotals = (laborHours: number, laborRate: number, vatRate: number, items: QuoteItemInput[]) => {
   const labor = laborHours * laborRate;
@@ -60,6 +61,7 @@ type SaveQuoteInput = {
   notes?: string | null;
   items: QuoteItemInput[];
   status?: QuoteStatus;
+  publicAccess?: 'PUBLIC' | 'VIEW_ONLY' | 'HIDDEN';
 };
 
 export async function saveQuote(input: SaveQuoteInput) {
@@ -74,6 +76,7 @@ export async function saveQuote(input: SaveQuoteInput) {
     notes,
     items,
     status = QuoteStatus.DRAFT,
+    publicAccess = 'HIDDEN',
   } = input;
 
   if (!ticketId) throw new Error('ID zgłoszenia jest wymagane');
@@ -100,6 +103,13 @@ export async function saveQuote(input: SaveQuoteInput) {
   if (id) {
     // update
     return prisma.$transaction(async (tx) => {
+      const existingQuote = await tx.quote.findUnique({
+        where: { id },
+        select: {
+          status: true,
+        },
+      });
+
       // Upsert items: delete removed, update existing, create new
       const existingItems = await tx.quoteItem.findMany({ where: { quoteId: id } });
       const incomingIds = new Set(normalizedItems.map((i) => i.id).filter(Boolean) as string[]);
@@ -145,12 +155,28 @@ export async function saveQuote(input: SaveQuoteInput) {
           vatRate,
           notes: notes || null,
           status,
+          publicAccess,
           totalNet: totals.net,
           totalVat: totals.vat,
           totalGross: totals.gross,
         },
         include: { items: true },
       });
+
+      if (status === QuoteStatus.ACCEPTED) {
+        await reserveQuoteParts(tx, updated.ticketId, updated.items);
+      }
+
+      if (status === QuoteStatus.ACCEPTED && existingQuote?.status !== QuoteStatus.ACCEPTED) {
+        await tx.ticketEvent.create({
+          data: {
+            ticketId: updated.ticketId,
+            type: TicketEventType.NOTE,
+            message: `Zaakceptowano kosztorys ${updated.number} na kwotę brutto ${Number(updated.totalGross ?? 0).toFixed(2)} zł`,
+            author: 'user',
+          },
+        });
+      }
 
       return {
         id: updated.id,
@@ -190,6 +216,7 @@ export async function saveQuote(input: SaveQuoteInput) {
         vatRate,
         notes: notes || null,
         status,
+        publicAccess,
         totalNet: totals.net,
         totalVat: totals.vat,
         totalGross: totals.gross,
@@ -209,16 +236,79 @@ export async function saveQuote(input: SaveQuoteInput) {
       });
     }
 
+    await tx.ticketEvent.create({
+      data: {
+        ticketId,
+        type: TicketEventType.NOTE,
+        message: `Utworzono kosztorys ${number} na kwotę brutto ${totals.gross.toFixed(2)} zł`,
+        author: 'user',
+      },
+    });
+
+    if (status === QuoteStatus.ACCEPTED) {
+      await reserveQuoteParts(tx, ticketId, normalizedItems);
+    }
+
+    if (status === QuoteStatus.ACCEPTED) {
+      await tx.ticketEvent.create({
+        data: {
+          ticketId,
+          type: TicketEventType.NOTE,
+          message: `Zaakceptowano kosztorys ${number} na kwotę brutto ${totals.gross.toFixed(2)} zł`,
+          author: 'user',
+        },
+      });
+    }
+
     return { id: quote.id, status: quote.status };
   });
 }
 
 export async function updateQuoteStatus(id: string, status: QuoteStatus) {
   if (!id) throw new Error('ID kosztorysu jest wymagane');
-  const updated = await prisma.quote.update({
-    where: { id },
-    data: { status },
-    select: { id: true, status: true },
+  const updated = await prisma.$transaction(async (tx) => {
+    const existingQuote = await tx.quote.findUnique({
+      where: { id },
+      select: {
+        status: true,
+      },
+    });
+
+    const quote = await tx.quote.update({
+      where: { id },
+      data: { status },
+      select: {
+        id: true,
+        number: true,
+        status: true,
+        ticketId: true,
+        totalGross: true,
+        items: {
+          select: {
+            partId: true,
+            quantity: true,
+          },
+        },
+      },
+    });
+
+    if (status === QuoteStatus.ACCEPTED && existingQuote?.status !== QuoteStatus.ACCEPTED) {
+      await reserveQuoteParts(tx, quote.ticketId, quote.items);
+
+      await tx.ticketEvent.create({
+        data: {
+          ticketId: quote.ticketId,
+          type: TicketEventType.NOTE,
+          message: `Zaakceptowano kosztorys ${quote.number} na kwotę brutto ${Number(quote.totalGross ?? 0).toFixed(2)} zł`,
+          author: 'user',
+        },
+      });
+    }
+
+    return {
+      id: quote.id,
+      status: quote.status,
+    };
   });
   return updated;
 }
@@ -231,7 +321,46 @@ export async function deleteAllQuotes() {
 
 export async function deleteQuote(id: string) {
   if (!id) throw new Error('ID kosztorysu jest wymagane');
-  const deletedItems = await prisma.quoteItem.deleteMany({ where: { quoteId: id } });
-  const deletedQuote = await prisma.quote.delete({ where: { id } });
-  return { deletedQuoteId: deletedQuote.id, deletedItems: deletedItems.count };
+
+  return prisma.$transaction(async (tx) => {
+    const quote = await tx.quote.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        number: true,
+        status: true,
+        ticketId: true,
+        items: {
+          select: {
+            partId: true,
+            quantity: true,
+          },
+        },
+      },
+    });
+
+    if (!quote) {
+      throw new Error('Kosztorys nie został znaleziony');
+    }
+
+    if (quote.status === QuoteStatus.ACCEPTED) {
+      await releaseQuotePartReservations(tx, quote.ticketId, quote.items);
+    }
+
+    const deletedItems = await tx.quoteItem.deleteMany({ where: { quoteId: id } });
+    const deletedQuote = await tx.quote.delete({ where: { id } });
+
+    if (quote.status === QuoteStatus.ACCEPTED) {
+      await tx.ticketEvent.create({
+        data: {
+          ticketId: quote.ticketId,
+          type: TicketEventType.NOTE,
+          message: `Usunięto zaakceptowany kosztorys ${quote.number} i zwolniono niewydane rezerwacje części.`,
+          author: 'user',
+        },
+      });
+    }
+
+    return { deletedQuoteId: deletedQuote.id, deletedItems: deletedItems.count };
+  });
 }

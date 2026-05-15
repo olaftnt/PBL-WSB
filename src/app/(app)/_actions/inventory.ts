@@ -145,3 +145,74 @@ export async function consumePart(partId: string, quantity: number) {
     };
   });
 }
+
+export async function consumeReservedPartForTicket(input: {
+  ticketId: string;
+  partId: string;
+}) {
+  if (!input.ticketId) throw new Error('ID zgłoszenia jest wymagane');
+  if (!input.partId) throw new Error('ID części jest wymagane');
+
+  return prisma.$transaction(async (tx) => {
+    const reservations = await tx.partReservation.findMany({
+      where: {
+        ticketId: input.ticketId,
+        partId: input.partId,
+      },
+      include: {
+        part: {
+          select: {
+            id: true,
+            sku: true,
+            name: true,
+            quantity: true,
+            reserved: true,
+          },
+        },
+      },
+    });
+
+    if (!reservations.length) {
+      throw new Error('Brak rezerwacji tej części dla zgłoszenia');
+    }
+
+    const quantityToConsume = reservations.reduce(
+      (sum, reservation) => sum + reservation.quantity,
+      0,
+    );
+    const part = reservations[0].part;
+
+    if (part.quantity < quantityToConsume) {
+      throw new Error('Brak wystarczającej ilości w magazynie');
+    }
+
+    await tx.partReservation.deleteMany({
+      where: {
+        ticketId: input.ticketId,
+        partId: input.partId,
+      },
+    });
+
+    await tx.part.update({
+      where: { id: input.partId },
+      data: {
+        quantity: part.quantity - quantityToConsume,
+        reserved: Math.max(0, part.reserved - quantityToConsume),
+      },
+    });
+
+    await tx.ticketEvent.create({
+      data: {
+        ticketId: input.ticketId,
+        type: 'NOTE',
+        message: `Wydano z magazynu ${quantityToConsume} szt. części ${part.sku} · ${part.name} i usunięto rezerwację.`,
+        author: 'user',
+      },
+    });
+
+    return {
+      partId: input.partId,
+      quantity: quantityToConsume,
+    };
+  });
+}

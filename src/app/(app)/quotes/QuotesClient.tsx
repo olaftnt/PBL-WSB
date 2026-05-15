@@ -10,7 +10,7 @@ export default function QuotesClient({
   stats,
 }: {
   quotes: QuoteListItem[];
-  stats: { total: number; sent: number; accepted: number; rejected: number };
+  stats: { total: number; sent: number; accepted: number; rejected: number; pendingCustomer: number };
 }) {
   const router = useRouter();
   const onNavigate = (view: any, id?: string) => router.push(viewToPath(view, id));

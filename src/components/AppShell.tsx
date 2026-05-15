@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { GlobalSearch } from '@/components/GlobalSearch';
 import { TicketNotifications } from '@/components/TicketNotifications';
 import {
   LayoutDashboard,
@@ -15,7 +16,6 @@ import {
   Settings,
   LogOut,
   Bell,
-  Search,
   BookOpen,
 } from 'lucide-react';
 
@@ -147,15 +147,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="text-lg font-semibold truncate">{title}</div>
               </div>
 
-              <div className="hidden flex items-center gap-3">
-                {/* SEARCH (opcjonalnie) */}
-                <div className=" md:flex items-center gap-2 px-3 h-10 rounded-2xl bg-white/5 border border-white/10">
-                  <Search className="w-4 h-4 text-white/60" />
-                  <input
-                    className=" bg-transparent outline-none text-sm placeholder:text-white/40 w-56"
-                    placeholder="Szukaj..."
-                  />
-                </div>
+              <div className="flex items-center gap-3">
+                <GlobalSearch />
 
                 {/* NOTIFICATIONS */}
                 <button

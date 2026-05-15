@@ -26,6 +26,11 @@ type TicketRow = {
 
   customer: { name: string };
   device?: { name: string } | null;
+  quotes?: Array<{
+    id: string;
+    status: string;
+    publicAccess?: string;
+  }>;
 };
 
 interface TicketListProps {
@@ -35,7 +40,7 @@ interface TicketListProps {
 
 export function TicketList({ onNavigate, tickets }: TicketListProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | TicketStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | TicketStatus | 'pending_customer_acceptance' | 'waiting_for_quote'>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | TicketPriority>('all');
 
   const getStatusColor = (status: string) => {
@@ -97,7 +102,20 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
         return false;
       }
 
-      const matchStatus = statusFilter === 'all' || t.status === statusFilter;
+      const hasQuotes = (t.quotes?.length ?? 0) > 0;
+      const hasQuoteWaitingForCustomer = (t.quotes ?? []).some(
+        (quote) =>
+          quote.publicAccess === 'PUBLIC' &&
+          quote.status !== 'ACCEPTED' &&
+          quote.status !== 'REJECTED',
+      );
+      const matchStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'waiting_for_quote'
+          ? !hasQuotes
+          : statusFilter === 'pending_customer_acceptance'
+            ? hasQuoteWaitingForCustomer
+            : t.status === statusFilter);
       if (!matchStatus) return false;
 
       const matchPriority = priorityFilter === 'all' || t.priority === priorityFilter;
@@ -181,6 +199,8 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
               className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
             >
               <option value="all">Aktywne (bez wykonanych i anulowanych)</option>
+              <option value="pending_customer_acceptance">Oczekuje na akceptację klienta</option>
+              <option value="waiting_for_quote">Czeka na kosztorys</option>
               <option value="NEW">Nowe</option>
               <option value="IN_PROGRESS">W trakcie</option>
               <option value="WAITING">Oczekujące</option>
@@ -246,7 +266,23 @@ export function TicketList({ onNavigate, tickets }: TicketListProps) {
                     className="border-b border-[#1A2642] hover:bg-[#121B2D] cursor-pointer transition-colors"
                   >
                     <td className="px-6 py-4">
-                      <span className="text-white">{t.number}</span>
+                      <div className="space-y-2">
+                        <span className="text-white">{t.number}</span>
+                        {(t.quotes?.length ?? 0) === 0 ? (
+                          <div className="w-fit rounded-full border border-[#FFB800]/30 bg-[#FFB800]/10 px-2 py-1 text-xs text-[#FFB800]">
+                            Czeka na kosztorys
+                          </div>
+                        ) : (t.quotes ?? []).some(
+                            (quote) =>
+                              quote.publicAccess === 'PUBLIC' &&
+                              quote.status !== 'ACCEPTED' &&
+                              quote.status !== 'REJECTED',
+                          ) ? (
+                          <div className="w-fit rounded-full border border-[#00D9FF]/30 bg-[#00D9FF]/10 px-2 py-1 text-xs text-[#00D9FF]">
+                            Oczekuje na akceptację klienta
+                          </div>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-[#94A3B8]">{t.title}</span>

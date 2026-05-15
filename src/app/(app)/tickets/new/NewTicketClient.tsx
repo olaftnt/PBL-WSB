@@ -46,10 +46,10 @@ export default function NewTicketClient({
       customers={customers}
       devices={devices}
       onCancel={() => router.push('/tickets')}
-      onCreated={() => router.push('/tickets')}
+      onCreated={(ticketId: string) => router.push(`/tickets/${ticketId}`)}
       onCreate={async (payload) => {
         // payload ma już priorytet/sla/status itd. mapowane w komponencie
-        await createTicket(payload);
+        return await createTicket(payload);
       }}
       onCreateCustomer={async (payload: CreateCustomerInput) => {
         // phone jest wymagany (string) – zgodnie z Twoją akcją

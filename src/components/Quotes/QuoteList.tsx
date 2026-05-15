@@ -16,7 +16,7 @@ import type { QuoteListItem } from "@/types/quote";
 interface QuoteListProps {
   onNavigate: (view: View, id?: string) => void;
   quotes: QuoteListItem[];
-  stats: { total: number; sent: number; accepted: number; rejected: number };
+  stats: { total: number; sent: number; accepted: number; rejected: number; pendingCustomer: number };
 }
 
 export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
@@ -71,7 +71,12 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
 
   const filteredQuotes = quotes.filter(
     (quote) =>
-      (statusFilter === "all" || String(quote.status).toLowerCase() === statusFilter) &&
+      (statusFilter === "all" ||
+        (statusFilter === "pending_customer"
+          ? quote.publicAccess === "PUBLIC" &&
+            quote.status !== "ACCEPTED" &&
+            quote.status !== "REJECTED"
+          : String(quote.status).toLowerCase() === statusFilter)) &&
       (searchQuery === "" ||
         quote.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
         quote.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,7 +99,7 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
           {
             label: "Wszystkie",
@@ -110,6 +115,11 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
             label: "Zaakceptowane",
             value: stats.accepted,
             color: "from-[#00FF88] to-[#00CC6A]",
+          },
+          {
+            label: "Czeka na klienta",
+            value: stats.pendingCustomer,
+            color: "from-[#00D9FF] to-[#0099CC]",
           },
           
         ].map((stat, index) => (
@@ -133,6 +143,29 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
           />
+        </div>
+        <div className="flex flex-wrap gap-2 mt-4">
+          {[
+            { id: "all", label: "Wszystkie" },
+            { id: "pending_customer", label: "Czeka na akceptację klienta" },
+            { id: "draft", label: "Szkice" },
+            { id: "sent", label: "Zapisane" },
+            { id: "accepted", label: "Zaakceptowane" },
+            { id: "rejected", label: "Odrzucone" },
+          ].map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              onClick={() => setStatusFilter(filter.id)}
+              className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+                statusFilter === filter.id
+                  ? "border-[#00FF88] bg-[#00FF88]/10 text-[#00FF88]"
+                  : "border-[#1A2642] bg-[#121B2D] text-[#94A3B8] hover:text-white hover:border-[#00FF88]"
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -172,6 +205,11 @@ export function QuoteList({ onNavigate, quotes, stats }: QuoteListProps) {
                   {statusConfig.label}
                 </span>
               </div>
+              {quote.publicAccess === "PUBLIC" && quote.status !== "ACCEPTED" && quote.status !== "REJECTED" && (
+                <div className="mb-4 rounded-lg border border-[#00D9FF]/30 bg-[#00D9FF]/10 px-3 py-2 text-[#00D9FF] text-sm">
+                  Czeka na akceptację klienta
+                </div>
+              )}
               <div className="space-y-2 mb-4">
                 <p className="text-[#64748B] text-sm">{quote.deviceName}</p>
                 {quote.notes && (

@@ -29,6 +29,7 @@ interface QuoteDetailProps {
   initialQuote: QuoteDetailData;
   parts: PartOption[];
   tickets: TicketOption[];
+  customers?: CustomerOption[];
 }
 
 export function QuoteDetail({
@@ -46,6 +47,9 @@ export function QuoteDetail({
   const [vatRate, setVatRate] = useState(initialQuote.vatRate);
   const [ticketId, setTicketId] = useState(initialQuote.ticketId);
   const [customerId, setCustomerId] = useState(initialQuote.customerId);
+  const [publicAccess, setPublicAccess] = useState<'PUBLIC' | 'VIEW_ONLY' | 'HIDDEN'>(
+    initialQuote.publicAccess ?? 'HIDDEN'
+  );
   const [notes, setNotes] = useState(initialQuote.notes ?? "");
   const [items, setItems] = useState<any[]>(
     initialQuote.items.map((i) => ({
@@ -62,6 +66,9 @@ export function QuoteDetail({
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [partSearchByRow, setPartSearchByRow] = useState<Record<string, string>>({});
+  const [openPartPickerRow, setOpenPartPickerRow] = useState<string | null>(null);
+  const selectedTicket = tickets.find((t) => t.id === ticketId);
 
   const laborCost = useMemo(() => {
     return (parseFloat(laborHours) || 0) * (parseFloat(laborRate) || 0);
@@ -120,10 +127,23 @@ export function QuoteDetail({
 
   const handleRemovePart = (id: string) => {
     setItems(items.filter((p) => p.id !== id));
+    if (openPartPickerRow === id) {
+      setOpenPartPickerRow(null);
+    }
+    setPartSearchByRow((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
   };
 
   const handleSelectPart = (rowId: string, selectedId: string) => {
     const selected = availableParts.find((p) => p.id === selectedId);
+    setPartSearchByRow((current) => ({
+      ...current,
+      [rowId]: selected ? `${selected.sku} ${selected.name}` : "",
+    }));
+    setOpenPartPickerRow(null);
     setItems(
       items.map((p) =>
         p.id === rowId
@@ -139,6 +159,24 @@ export function QuoteDetail({
     );
   };
 
+  const getFilteredPartOptions = (rowId: string, selectedPartId?: string | null) => {
+    const query = (partSearchByRow[rowId] ?? "").trim().toLowerCase();
+    const filtered = query
+      ? availableParts.filter((part) =>
+          `${part.name} ${part.sku}`.toLowerCase().includes(query)
+        )
+      : availableParts;
+    const selected = selectedPartId
+      ? availableParts.find((part) => part.id === selectedPartId)
+      : undefined;
+
+    if (selected && !filtered.some((part) => part.id === selected.id)) {
+      return [selected, ...filtered];
+    }
+
+    return filtered;
+  };
+
   const handleSave = async (saveAs: QuoteStatus) => {
     setSaving(true);
     setLastAction(null);
@@ -147,7 +185,7 @@ export function QuoteDetail({
         id: isNew ? undefined : initialQuote.id,
         ticketId: ticketId || "",
         customerId: customerId || "",
-        deviceId: initialQuote.deviceId || null,
+        deviceId: selectedTicket?.deviceId ?? initialQuote.deviceId ?? null,
         laborHours: parseFloat(laborHours) || 0,
         laborRate: parseFloat(laborRate) || 0,
         vatRate,
@@ -160,6 +198,7 @@ export function QuoteDetail({
           unitPrice: parseFloat(i.unitPrice) || 0,
         })),
         status: saveAs,
+        publicAccess,
       });
       setStatus(saveAs);
       setLastAction(
@@ -238,6 +277,17 @@ export function QuoteDetail({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {ticketId && (
+            <button
+              type="button"
+              onClick={() => router.push(`/tickets/${ticketId}`)}
+              className="px-5 py-3 bg-gradient-to-r from-[#00D9FF] to-[#0099CC] text-white rounded-lg hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-[#00D9FF]/10"
+            >
+              <Clipboard className="w-5 h-5" />
+              Przejdź do zlecenia
+            </button>
+          )}
+
           {!isNew && (
             <>
               <button className="hidden px-4 py-2 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2">
@@ -283,15 +333,40 @@ export function QuoteDetail({
                   Klient
                 </label>
                 <div className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white">
-                  {tickets.find((t) => t.id === ticketId)?.customerName ||
+                  {selectedTicket?.customerName ||
                     initialQuote.customerName ||
                     "—"}
                 </div>
               </div>
             </div>
-            {initialQuote.deviceName && (
+            <div>
+              <label className="block text-[#94A3B8] text-sm mb-2">
+                Widoczność w statusie publicznym
+              </label>
+              <select
+                value={publicAccess}
+                onChange={(e) =>
+                  setPublicAccess(e.target.value as 'PUBLIC' | 'VIEW_ONLY' | 'HIDDEN')
+                }
+                className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
+              >
+                <option value="PUBLIC">
+                  Publiczny - klient widzi i może zaakceptować
+                </option>
+                <option value="VIEW_ONLY">
+                  Widoczny - klient może tylko zobaczyć
+                </option>
+                <option value="HIDDEN">
+                  Ukryty - widzi tylko serwisant
+                </option>
+              </select>
+              <p className="mt-2 text-xs text-[#64748B]">
+                Dotyczy podglądu na stronie statusu publicznego.
+              </p>
+            </div>
+            {(selectedTicket?.deviceName || initialQuote.deviceName) && (
               <p className="text-sm text-[#94A3B8]">
-                Urządzenie: {initialQuote.deviceName}
+                Urządzenie: {selectedTicket?.deviceName || initialQuote.deviceName}
               </p>
             )}
           </div>
@@ -351,26 +426,79 @@ export function QuoteDetail({
                   className="bg-[#121B2D] rounded-lg p-4 border border-[#1A2642]"
                 >
                   <div className="grid grid-cols-12 gap-3 items-end">
-                    <div className="col-span-4">
+                    <div className="col-span-4 relative">
                       <label className="block text-[#94A3B8] text-xs mb-2">
                         Magazyn
                       </label>
-                      <select
-                        value={part.partId ?? ""}
-                        onChange={(e) =>
-                          handleSelectPart(part.id, e.target.value)
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenPartPickerRow(
+                            openPartPickerRow === part.id ? null : part.id
+                          )
                         }
                         className="w-full px-3 py-2 bg-[#0C1222] border border-[#1A2642] rounded text-white text-sm focus:outline-none focus:border-[#00FF88] transition-colors"
                       >
-                        <option value="">
-                          Wybierz z magazynu (opcjonalnie)
-                        </option>
-                        {availableParts.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.sku} · {p.name} ({p.quantity - p.reserved} szt.)
-                          </option>
-                        ))}
-                      </select>
+                        <span className="block truncate text-left">
+                          {part.partId
+                            ? availableParts.find((p) => p.id === part.partId)
+                              ? `${availableParts.find((p) => p.id === part.partId)?.sku} · ${availableParts.find((p) => p.id === part.partId)?.name}`
+                              : "Wybrana część"
+                            : "Wybierz z magazynu (opcjonalnie)"}
+                        </span>
+                      </button>
+
+                      {openPartPickerRow === part.id && (
+                        <div className="absolute z-30 mt-2 w-[min(42rem,calc(100vw-3rem))] rounded-lg border border-[#1A2642] bg-[#0C1222] shadow-xl">
+                          <div className="p-2 border-b border-[#1A2642]">
+                            <input
+                              type="text"
+                              value={partSearchByRow[part.id] ?? ""}
+                              onChange={(e) =>
+                                setPartSearchByRow((current) => ({
+                                  ...current,
+                                  [part.id]: e.target.value,
+                                }))
+                              }
+                              placeholder="Szukaj po nazwie lub SKU..."
+                              autoFocus
+                              className="w-full px-3 py-2 bg-[#121B2D] border border-[#1A2642] rounded text-white text-sm placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
+                            />
+                          </div>
+
+                          <div className="max-h-56 overflow-y-auto p-1">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectPart(part.id, "")}
+                              className="w-full px-3 py-2 text-left text-sm text-[#94A3B8] hover:bg-[#121B2D] rounded"
+                            >
+                              Wybierz z magazynu (opcjonalnie)
+                            </button>
+
+                            {getFilteredPartOptions(part.id, part.partId).map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => handleSelectPart(part.id, p.id)}
+                                className="w-full px-3 py-2 text-left text-sm text-white hover:bg-[#121B2D] rounded"
+                              >
+                                <span className="block whitespace-normal break-words">
+                                  {p.sku} · {p.name}
+                                </span>
+                                <span className="block text-xs text-[#64748B]">
+                                  {p.quantity - p.reserved} szt.
+                                </span>
+                              </button>
+                            ))}
+
+                            {getFilteredPartOptions(part.id, part.partId).length === 0 && (
+                              <p className="px-3 py-2 text-sm text-[#64748B]">
+                                Brak pasujących części.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="col-span-3">
                       <label className="block text-[#94A3B8] text-xs mb-2">

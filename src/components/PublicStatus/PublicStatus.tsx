@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, CheckCircle, Clock, ClockFading, Package, Truck, Mail, Phone, CircleX, PackageCheck, Wrench, BaggageClaim } from 'lucide-react';
+
+const publicStatusSessionKey = 'publicStatusLastResult';
 
 export function PublicStatus() {
   const [ticketNumber, setTicketNumber] = useState('');
@@ -9,25 +11,114 @@ export function PublicStatus() {
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [acceptingQuoteId, setAcceptingQuoteId] = useState<string | null>(null);
+  const [expandedAcceptedQuotes, setExpandedAcceptedQuotes] = useState<Record<string, boolean>>({});
+
+  const fetchStatus = async (nextTicketNumber: string, nextContactInfo: string) => {
+    const res = await fetch('/api/PublicStatus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticketNumber: nextTicketNumber,
+        contactInfo: nextContactInfo,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Nie znaleziono zgłoszenia');
+    }
+
+    return res.json();
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ticketNumberFromUrl = params.get('ticketNumber');
+      const contactInfoFromUrl = params.get('contactInfo');
+      const stored = sessionStorage.getItem(publicStatusSessionKey);
+      const parsed = stored ? JSON.parse(stored) : null;
+      const nextTicketNumber = ticketNumberFromUrl || parsed?.ticketNumber;
+      const nextContactInfo = contactInfoFromUrl || parsed?.contactInfo;
+
+      if (!nextTicketNumber || !nextContactInfo) return;
+
+      setTicketNumber(nextTicketNumber);
+      setContactInfo(nextContactInfo);
+
+      fetchStatus(nextTicketNumber, nextContactInfo)
+        .then((data) => {
+          if (cancelled) return;
+          setResult(data);
+          setShowResult(true);
+          sessionStorage.setItem(
+            publicStatusSessionKey,
+            JSON.stringify({ ticketNumber: nextTicketNumber, contactInfo: nextContactInfo }),
+          );
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          console.error('Nie udało się odświeżyć statusu publicznego:', error);
+          sessionStorage.removeItem(publicStatusSessionKey);
+        });
+    } catch (error) {
+      console.error('Nie udało się odtworzyć statusu publicznego:', error);
+      sessionStorage.removeItem(publicStatusSessionKey);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const res = await fetch('/api/PublicStatus', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticketNumber, contactInfo }),
-    });
-
-    if (!res.ok) {
+    try {
+      const data = await fetchStatus(ticketNumber, contactInfo);
+      setResult(data);
+      setShowResult(true);
+      sessionStorage.setItem(
+        publicStatusSessionKey,
+        JSON.stringify({ ticketNumber, contactInfo }),
+      );
+    } catch {
       setError('Nie znaleziono zgłoszenia');
       return;
     }
+  };
 
-    const data = await res.json();
-    setResult(data);
-    setShowResult(true);
+  const handleAcceptQuote = async (quoteId: string) => {
+    setError('');
+    setAcceptingQuoteId(quoteId);
+
+    const res = await fetch('/api/PublicStatus', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticketNumber, contactInfo, quoteId }),
+    });
+
+    if (!res.ok) {
+      setError('Nie udało się zaakceptować kosztorysu');
+      setAcceptingQuoteId(null);
+      return;
+    }
+
+    try {
+      const data = await fetchStatus(ticketNumber, contactInfo);
+      setResult(data);
+      sessionStorage.setItem(
+        publicStatusSessionKey,
+        JSON.stringify({ ticketNumber, contactInfo }),
+      );
+    } catch {
+      setError('Zaakceptowano, ale nie udało się odświeżyć danych');
+    }
+
+    setAcceptingQuoteId(null);
   };
 
   return (
@@ -108,7 +199,11 @@ export function PublicStatus() {
           result && (
             <div>
               <button
-                onClick={() => setShowResult(false)}
+                onClick={() => {
+                  setShowResult(false);
+                  setResult(null);
+                  sessionStorage.removeItem(publicStatusSessionKey);
+                }}
                 className="mb-6 text-[#94A3B8] hover:text-white transition-colors"
               >
                 ← Cofnij do wyszukiwania
@@ -137,6 +232,146 @@ export function PublicStatus() {
                      result.status}
                   </div>
                 </div>
+
+                {result.quotes?.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-white mb-4">Kosztorysy</h3>
+                    <div className="space-y-4">
+                      {result.quotes.map((quote: any) => (
+                        <div key={quote.id} className="bg-[#121B2D] rounded-xl p-6 border border-[#1A2642]">
+                          {(() => {
+                            const isAccepted = quote.status === 'ACCEPTED';
+                            const isExpanded = !isAccepted || expandedAcceptedQuotes[quote.id];
+
+                            return (
+                              <>
+                          <div className={`flex items-start justify-between gap-4 ${isExpanded ? 'mb-4' : ''}`}>
+                            <div>
+                              <p className="text-[#64748B] text-sm mb-1">
+                                Kosztorys
+                              </p>
+                              <h4 className="text-white text-lg">{quote.number}</h4>
+                              {isExpanded ? (
+                                <p className="text-[#94A3B8] text-sm mt-1">
+                                  {quote.publicAccess === 'PUBLIC'
+                                    ? 'Możesz zaakceptować ten kosztorys online.'
+                                    : 'Kosztorys widoczny do podglądu.'}
+                                </p>
+                              ) : (
+                                <p className="text-[#00FF88] text-sm mt-1">
+                                  Zaakceptowany · {quote.totalGross}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs border ${
+                                  quote.status === 'ACCEPTED'
+                                    ? 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/30'
+                                    : quote.status === 'REJECTED'
+                                      ? 'bg-[#FF6B35]/10 text-[#FF6B35] border-[#FF6B35]/30'
+                                      : 'bg-[#64748B]/10 text-[#94A3B8] border-[#64748B]/30'
+                                }`}
+                              >
+                                {quote.status === 'ACCEPTED'
+                                  ? 'Zaakceptowany'
+                                  : quote.status === 'REJECTED'
+                                    ? 'Odrzucony'
+                                    : quote.status === 'SENT'
+                                      ? 'Zapisany'
+                                      : 'Szkic'}
+                              </span>
+                              {isAccepted && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpandedAcceptedQuotes((current) => ({
+                                      ...current,
+                                      [quote.id]: !current[quote.id],
+                                    }))
+                                  }
+                                  className="px-3 py-1 rounded-full border border-[#1A2642] text-xs text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors"
+                                >
+                                  {isExpanded ? 'Ukryj szczegóły' : 'Pokaż szczegóły'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {isExpanded && quote.items?.length > 0 && (
+                            <div className="mb-4 overflow-hidden rounded-lg border border-[#1A2642]">
+                              {quote.items.map((item: any) => (
+                                <div
+                                  key={item.id}
+                                  className="grid grid-cols-12 gap-3 border-b border-[#1A2642] px-4 py-3 last:border-b-0"
+                                >
+                                  <div className="col-span-6">
+                                    <p className="text-white text-sm">{item.description}</p>
+                                  </div>
+                                  <div className="col-span-2 text-[#94A3B8] text-sm">
+                                    {item.quantity} szt.
+                                  </div>
+                                  <div className="col-span-2 text-[#94A3B8] text-sm">
+                                    {item.unitPrice}
+                                  </div>
+                                  <div className="col-span-2 text-right text-white text-sm">
+                                    {item.total}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {isExpanded && quote.notes && (
+                            <p className="text-[#94A3B8] text-sm mb-4 whitespace-pre-wrap">
+                              {quote.notes}
+                            </p>
+                          )}
+
+                          {isExpanded && (
+                          <div className="flex items-center justify-between gap-4 pt-4 border-t border-[#1A2642]">
+                            <div className="text-sm text-[#94A3B8]">
+                              <p>Netto: {quote.totalNet}</p>
+                              <p>VAT: {quote.totalVat}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[#64748B] text-sm">Razem brutto</p>
+                              <p className="text-[#00FF88] text-2xl">{quote.totalGross}</p>
+                            </div>
+                          </div>
+                          )}
+
+                          {isExpanded && quote.status === 'ACCEPTED' ? (
+                            <div className="mt-4 rounded-lg border border-[#00FF88]/30 bg-[#00FF88]/10 px-4 py-3 text-[#00FF88] text-sm">
+                              Ten kosztorys został zaakceptowany.
+                            </div>
+                          ) : isExpanded && quote.canAccept ? (
+                            <button
+                              type="button"
+                              onClick={() => handleAcceptQuote(quote.id)}
+                              disabled={acceptingQuoteId === quote.id}
+                              className="mt-4 w-full py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60 disabled:hover:scale-100"
+                            >
+                              {acceptingQuoteId === quote.id
+                                ? 'Akceptuję...'
+                                : 'Zaakceptuj kosztorys'}
+                            </button>
+                          ) : isExpanded ? (
+                            <div className="mt-4 rounded-lg border border-[#1A2642] bg-[#0C1222] px-4 py-3 text-[#94A3B8] text-sm">
+                              Ten kosztorys jest tylko do podglądu.
+                            </div>
+                          ) : null}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
                 
                 <div className="mb-8">

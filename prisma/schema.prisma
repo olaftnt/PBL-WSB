@@ -42,6 +42,12 @@ enum QuoteStatus {
   REJECTED
 }
 
+enum QuotePublicAccess {
+  PUBLIC
+  VIEW_ONLY
+  HIDDEN
+}
+
 model Customer {
   id        String   @id @default(cuid())
   name      String
@@ -160,6 +166,7 @@ model Quote {
   customerId String
   deviceId   String?
   status     QuoteStatus @default(DRAFT)
+  publicAccess QuotePublicAccess @default(HIDDEN)
   laborHours Decimal     @default(0)
   laborRate  Decimal     @default(0)
   vatRate    Decimal     @default(23)

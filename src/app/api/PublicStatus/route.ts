@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { reserveQuoteParts } from '@/lib/quoteReservations';
 
 
 const SLA_START_MODE: 'CREATED' | 'IN_PROGRESS' = 'CREATED';
@@ -95,6 +96,51 @@ const formatCurrencyPLN = (value: number | null) => {
   });
 };
 
+const serializeQuote = (quote: any) => ({
+  id: quote.id,
+  number: quote.number,
+  status: quote.status,
+  publicAccess: quote.publicAccess,
+  notes: quote.notes,
+  totalNet: formatCurrencyPLN(Number(quote.totalNet ?? 0)),
+  totalVat: formatCurrencyPLN(Number(quote.totalVat ?? 0)),
+  totalGross: formatCurrencyPLN(Number(quote.totalGross ?? 0)),
+  canAccept: quote.publicAccess === 'PUBLIC' && quote.status !== 'ACCEPTED',
+  items: (quote.items ?? []).map((item: any) => ({
+    id: item.id,
+    description: item.description,
+    quantity: item.quantity,
+    unitPrice: formatCurrencyPLN(Number(item.unitPrice ?? 0)),
+    total: formatCurrencyPLN(Number(item.total ?? 0)),
+  })),
+});
+
+async function findPublicTicket(ticketNumber: string, contactInfo: string) {
+  return prisma.ticket.findFirst({
+    where: {
+      number: ticketNumber,
+      customer: {
+        OR: [{ email: contactInfo }, { phone: contactInfo }],
+      },
+    },
+    include: {
+      device: true,
+      events: { orderBy: { createdAt: 'asc' } },
+      quotes: {
+        where: {
+          publicAccess: {
+            in: ['PUBLIC', 'VIEW_ONLY'],
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          items: true,
+        },
+      },
+    },
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const { ticketNumber, contactInfo } = await req.json();
@@ -103,18 +149,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Brak danych' }, { status: 400 });
     }
 
-    const ticket = await prisma.ticket.findFirst({
-      where: {
-        number: ticketNumber,
-        customer: {
-          OR: [{ email: contactInfo }, { phone: contactInfo }],
-        },
-      },
-      include: {
-        device: true,
-        events: { orderBy: { createdAt: 'asc' } },
-      },
-    });
+    const ticket = await findPublicTicket(ticketNumber, contactInfo);
 
     if (!ticket) {
       return NextResponse.json(
@@ -165,7 +200,7 @@ export async function POST(req: Request) {
           statusMessage: statusLabels[newStatus],
         };
       })
-      .filter(Boolean);
+      .filter((event): event is NonNullable<typeof event> => event !== null);
 
 
     const slaDisabled = ['DONE', 'CANCELED'].includes(ticket.status);
@@ -201,10 +236,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const quote = await prisma.quote.findFirst({
-      where: { ticketId: ticket.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const quote = ticket.quotes[0];
 
     const estimatedCost = quote ? formatCurrencyPLN(Number(quote.totalGross)) : null;    
 
@@ -216,8 +248,70 @@ export async function POST(req: Request) {
       events,
       estimatedCompletion,
       estimatedCost,
+      quotes: ticket.quotes.map(serializeQuote),
       notes: ticket.description,
     });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Błąd serwera' }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const { ticketNumber, contactInfo, quoteId } = await req.json();
+
+    if (!ticketNumber || !contactInfo || !quoteId) {
+      return NextResponse.json({ error: 'Brak danych' }, { status: 400 });
+    }
+
+    const ticket = await findPublicTicket(ticketNumber, contactInfo);
+
+    if (!ticket) {
+      return NextResponse.json(
+        { error: 'Nie znaleziono zgłoszenia' },
+        { status: 404 }
+      );
+    }
+
+    const quote = ticket.quotes.find((item) => item.id === quoteId);
+
+    if (!quote || quote.publicAccess !== 'PUBLIC') {
+      return NextResponse.json(
+        { error: 'Ten kosztorys nie może zostać zaakceptowany publicznie' },
+        { status: 403 }
+      );
+    }
+
+    if (quote.status !== 'ACCEPTED') {
+      await prisma.$transaction(async (tx) => {
+        const updatedQuote = await tx.quote.update({
+          where: { id: quote.id },
+          data: { status: 'ACCEPTED' },
+          include: {
+            items: {
+              select: {
+                partId: true,
+                quantity: true,
+              },
+            },
+          },
+        });
+
+        await reserveQuoteParts(tx, ticket.id, updatedQuote.items);
+
+        await tx.ticketEvent.create({
+          data: {
+            ticketId: ticket.id,
+            type: 'NOTE',
+            message: `Klient zaakceptował kosztorys ${quote.number} przez status publiczny.`,
+            author: 'klient',
+          },
+        });
+      });
+    }
+
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Błąd serwera' }, { status: 500 });

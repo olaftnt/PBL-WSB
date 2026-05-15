@@ -56,7 +56,7 @@ interface NewTicketProps {
   onCreateDevice: (payload: CreateDevicePayload) => Promise<Device>;
 
   onCancel: () => void;
-  onCreated: () => void;
+  onCreated: (ticketId: string) => void;
 }
 
 export function NewTicket({
@@ -142,7 +142,7 @@ export function NewTicket({
     try {
       const title = `Serwis: ${selectedDevice.name}`;
 
-      await onCreate({
+      const created = await onCreate({
         customerId: selectedCustomer.id,
         deviceId: selectedDevice.id,
         title,
@@ -153,7 +153,9 @@ export function NewTicket({
         accessories: formData.accessories,
       });
 
-      onCreated();
+      if (created?.id) {
+        onCreated(created.id);
+      }
     } finally {
       setSubmitting(false);
     }

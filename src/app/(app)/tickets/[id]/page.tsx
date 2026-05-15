@@ -44,6 +44,22 @@ export default async function TicketPage({
         },
       },
       repairProtocol: true,
+      partReservations: {
+        include: {
+          part: {
+            select: {
+              id: true,
+              sku: true,
+              name: true,
+              quantity: true,
+              reserved: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
       quotes: {
         orderBy: {
           updatedAt: 'desc',
@@ -52,6 +68,7 @@ export default async function TicketPage({
           items: {
             select: {
               id: true,
+              partId: true,
               description: true,
               quantity: true,
               unitPrice: true,
@@ -67,13 +84,73 @@ export default async function TicketPage({
     notFound();
   }
 
+  const previousRepairs = ticket.deviceId
+    ? await prisma.ticket.findMany({
+        where: {
+          deviceId: ticket.deviceId,
+          id: {
+            not: ticket.id,
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          number: true,
+          title: true,
+          status: true,
+          createdAt: true,
+          repairProtocol: {
+            select: {
+              repairCost: true,
+            },
+          },
+        },
+      })
+    : [];
+
   const deadline = calculateDeadline(ticket.createdAt, ticket.slaType);
+  const acceptedQuotePartIds = new Set(
+    ticket.quotes
+      .filter((quote) => quote.status === 'ACCEPTED')
+      .flatMap((quote) => quote.items.map((item) => item.partId).filter(Boolean) as string[]),
+  );
+  const reservedPartsById = new Map<
+    string,
+    {
+      partId: string;
+      sku: string;
+      name: string;
+      quantity: number;
+      stockQuantity: number;
+      stockReserved: number;
+    }
+  >();
+
+  for (const reservation of ticket.partReservations) {
+    if (!acceptedQuotePartIds.has(reservation.partId)) {
+      continue;
+    }
+
+    const existing = reservedPartsById.get(reservation.partId);
+
+    reservedPartsById.set(reservation.partId, {
+      partId: reservation.partId,
+      sku: reservation.part.sku,
+      name: reservation.part.name,
+      quantity: (existing?.quantity ?? 0) + reservation.quantity,
+      stockQuantity: reservation.part.quantity,
+      stockReserved: reservation.part.reserved,
+    });
+  }
 
   const serializedTicket = {
     ...ticket,
 
     createdAt: ticket.createdAt.toISOString(),
     updatedAt: ticket.updatedAt.toISOString(),
+    partReservations: [],
 
     events: ticket.events.map((event) => ({
       ...event,
@@ -107,6 +184,18 @@ export default async function TicketPage({
         unitPrice: item.unitPrice.toString(),
         total: item.total.toString(),
       })),
+    })),
+
+    reservedParts: Array.from(reservedPartsById.values()),
+
+    previousRepairs: previousRepairs.map((repair) => ({
+      ...repair,
+      createdAt: repair.createdAt.toISOString(),
+      repairProtocol: repair.repairProtocol
+        ? {
+            repairCost: repair.repairProtocol.repairCost.toString(),
+          }
+        : null,
     })),
   };
 

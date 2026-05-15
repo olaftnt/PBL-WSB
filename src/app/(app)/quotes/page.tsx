@@ -16,6 +16,7 @@ export default async function Page() {
     id: q.id,
     number: q.number,
     status: q.status,
+    publicAccess: q.publicAccess,
     customerName: q.customer?.name ?? "—",
     ticketNumber: q.ticket.number,
     deviceName: q.device?.name ?? q.device?.model ?? null,
@@ -29,6 +30,9 @@ export default async function Page() {
     sent: mapped.filter((q) => q.status === "SENT").length,
     accepted: mapped.filter((q) => q.status === "ACCEPTED").length,
     rejected: mapped.filter((q) => q.status === "REJECTED").length,
+    pendingCustomer: mapped.filter(
+      (q) => q.publicAccess === "PUBLIC" && q.status !== "ACCEPTED" && q.status !== "REJECTED"
+    ).length,
   };
 
   return <QuotesClient quotes={mapped} stats={stats} />;

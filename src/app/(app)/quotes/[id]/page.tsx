@@ -4,8 +4,15 @@ import { QuoteDetail } from '@/components/Quotes/QuoteDetail';
 import type { PartOption, TicketOption, CustomerOption } from '@/types/quote';
 import type { QuoteStatus } from '@prisma/client';
 
-export default async function QuoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function QuoteDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ ticketId?: string }>;
+}) {
   const { id } = await params;
+  const selectedTicketId = (await searchParams)?.ticketId ?? '';
 
   const parts = await prisma.part.findMany({
     orderBy: { name: 'asc' },
@@ -13,7 +20,14 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
 
   const tickets = await prisma.ticket.findMany({
     orderBy: { createdAt: 'desc' },
-    select: { id: true, number: true, customerId: true, customer: { select: { name: true } } },
+    select: {
+      id: true,
+      number: true,
+      customerId: true,
+      deviceId: true,
+      device: { select: { name: true, model: true } },
+      customer: { select: { name: true } },
+    },
     take: 100,
   });
 
@@ -36,8 +50,11 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
     number: t.number,
     customerId: t.customerId,
     customerName: t.customer?.name ?? null,
+    deviceId: t.deviceId,
+    deviceName: t.device?.name ?? t.device?.model ?? null,
   }));
   const customerOptions: CustomerOption[] = customers.map((c) => ({ id: c.id, name: c.name }));
+  const selectedTicket = ticketOptions.find((ticket) => ticket.id === selectedTicketId);
 
   if (id === 'new') {
     return (
@@ -46,12 +63,13 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
           id: 'new',
           number: 'NEW',
           status: 'DRAFT' as QuoteStatus,
-          ticketId: '',
-          ticketNumber: '',
-          customerId: '',
-          customerName: '',
-          deviceId: null,
-          deviceName: null,
+          publicAccess: 'HIDDEN',
+          ticketId: selectedTicket?.id ?? '',
+          ticketNumber: selectedTicket?.number ?? '',
+          customerId: selectedTicket?.customerId ?? '',
+          customerName: selectedTicket?.customerName ?? '',
+          deviceId: selectedTicket?.deviceId ?? null,
+          deviceName: selectedTicket?.deviceName ?? null,
           laborHours: 0,
           laborRate: 0,
           vatRate: 23,
@@ -87,6 +105,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
     id: quote.id,
     number: quote.number,
     status: quote.status,
+    publicAccess: quote.publicAccess,
     ticketId: quote.ticketId ?? '',
     ticketNumber: quote.ticket.number,
     customerId: quote.customerId ?? '',

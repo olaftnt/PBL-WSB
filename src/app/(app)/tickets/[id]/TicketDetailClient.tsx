@@ -9,6 +9,7 @@ import {
   deleteTicket,
   completeTicketWithProtocol,
 } from '@/app/(app)/_actions/tickets';
+import { consumeReservedPartForTicket } from '@/app/(app)/_actions/inventory';
 import { TicketDetail } from '@/components/TicketManagement/TicketDetail';
 
 export default function TicketDetailClient({
@@ -69,6 +70,23 @@ export default function TicketDetailClient({
         });
 
         router.push('/tickets');
+      }}
+      onOpenQuote={(id: string) => {
+        router.push(`/quotes/${id}`);
+      }}
+      onCreateQuote={() => {
+        router.push(`/quotes/new?ticketId=${ticket.id}`);
+      }}
+      onOpenTicket={(id: string) => {
+        router.push(`/tickets/${id}`);
+      }}
+      onConsumeReservedPart={async (partId: string) => {
+        await consumeReservedPartForTicket({
+          ticketId: ticket.id,
+          partId,
+        });
+
+        router.refresh();
       }}
       onCompleteWithProtocol={async (payload: {
         ticketId: string;
