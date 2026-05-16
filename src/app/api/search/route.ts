@@ -57,9 +57,9 @@ export async function GET(req: Request) {
           { customer: { name: contains } },
           { customer: { email: contains } },
           { customer: { phone: contains } },
-          { device: { name: contains } },
-          { device: { model: contains } },
-          { device: { serial: contains } },
+          { device: { is: { isDeleted: false, name: contains } } },
+          { device: { is: { isDeleted: false, model: contains } } },
+          { device: { is: { isDeleted: false, serial: contains } } },
         ],
       },
       orderBy: { updatedAt: 'desc' },
@@ -68,7 +68,7 @@ export async function GET(req: Request) {
         number: true,
         title: true,
         customer: { select: { name: true, phone: true } },
-        device: { select: { name: true, model: true, serial: true } },
+        device: { select: { name: true, model: true, serial: true, isDeleted: true } },
       },
       take: 5,
     }),
@@ -87,6 +87,7 @@ export async function GET(req: Request) {
     }),
     prisma.device.findMany({
       where: {
+        isDeleted: false,
         OR: [
           { name: contains },
           { model: contains },
@@ -112,9 +113,9 @@ export async function GET(req: Request) {
           { notes: contains },
           { ticket: { number: contains } },
           { customer: { name: contains } },
-          { device: { name: contains } },
-          { device: { model: contains } },
-          { device: { serial: contains } },
+          { device: { is: { isDeleted: false, name: contains } } },
+          { device: { is: { isDeleted: false, model: contains } } },
+          { device: { is: { isDeleted: false, serial: contains } } },
         ],
       },
       orderBy: { updatedAt: 'desc' },
@@ -153,8 +154,8 @@ export async function GET(req: Request) {
       subtitle: [
         ticket.customer?.name,
         ticket.customer?.phone,
-        ticket.device?.name ?? ticket.device?.model,
-        ticket.device?.serial ? `SN: ${ticket.device.serial}` : null,
+        ticket.device && !ticket.device.isDeleted ? ticket.device.name ?? ticket.device.model : null,
+        ticket.device && !ticket.device.isDeleted && ticket.device.serial ? `SN: ${ticket.device.serial}` : null,
       ]
         .filter(Boolean)
         .join(' · '),
@@ -164,9 +165,9 @@ export async function GET(req: Request) {
         scoreTextMatch(ticket.title, normalizedQuery, 620, 520, 420),
         scoreTextMatch(ticket.customer?.name, normalizedQuery, 500, 420, 320),
         scoreTextMatch(ticket.customer?.phone, normalizedQuery, 560, 500, 450),
-        scoreTextMatch(ticket.device?.serial, normalizedQuery, 700, 620, 520),
-        scoreTextMatch(ticket.device?.name, normalizedQuery, 480, 380, 280),
-        scoreTextMatch(ticket.device?.model, normalizedQuery, 450, 350, 250),
+        scoreTextMatch(ticket.device && !ticket.device.isDeleted ? ticket.device.serial : null, normalizedQuery, 700, 620, 520),
+        scoreTextMatch(ticket.device && !ticket.device.isDeleted ? ticket.device.name : null, normalizedQuery, 480, 380, 280),
+        scoreTextMatch(ticket.device && !ticket.device.isDeleted ? ticket.device.model : null, normalizedQuery, 450, 350, 250),
       ),
     })),
     ...customers.map((customer): ScoredSearchResult => ({

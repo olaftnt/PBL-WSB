@@ -50,3 +50,17 @@ export async function updateDevice(input: {
 
   return updated;
 }
+
+export async function setDeviceDeleted(input: {
+  id: string;
+  isDeleted: boolean;
+}) {
+  if (!input.id) throw new Error('ID urządzenia jest wymagane');
+
+  const updated = await prisma.device.update({
+    where: { id: input.id },
+    data: { isDeleted: input.isDeleted },
+  });
+
+  return updated;
+}

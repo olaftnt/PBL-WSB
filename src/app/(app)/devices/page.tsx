@@ -21,6 +21,7 @@ export default async function Page() {
     name: d.name,
     model: d.model,
     serial: d.serial,
+    isDeleted: d.isDeleted,
     customerId: d.customerId,
     customerName: d.customer?.name ?? '—',
     tickets: d._count.tickets,

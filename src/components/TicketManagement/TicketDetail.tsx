@@ -46,9 +46,11 @@ type TicketDetailModel = {
   };
 
   device?: {
+    id: string;
     name: string;
     model?: string | null;
     serial?: string | null;
+    isDeleted?: boolean;
   } | null;
 
   events: Array<{
@@ -117,6 +119,7 @@ interface Props {
   onOpenQuote: (id: string) => void;
   onCreateQuote: () => void;
   onOpenTicket: (id: string) => void;
+  onOpenDevice: (id: string) => void;
   onConsumeReservedPart: (partId: string) => Promise<any>;
   onCompleteWithProtocol: (payload: {
     ticketId: string;
@@ -136,6 +139,7 @@ export function TicketDetail({
   onOpenQuote,
   onCreateQuote,
   onOpenTicket,
+  onOpenDevice,
   onConsumeReservedPart,
   onCompleteWithProtocol,
 }: Props) {
@@ -923,10 +927,27 @@ export function TicketDetail({
 
           {/* Device */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-            <h3 className="text-white mb-4 flex items-center gap-2">
-              <Smartphone className="w-5 h-5 text-[#A78BFA]" />
-              Informacje o urządzeniu
-            </h3>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="text-white flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-[#A78BFA]" />
+                Informacje o urządzeniu
+                {ticket.device?.isDeleted && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#FF6B35]/30 bg-[#FF6B35]/10 px-2 py-1 text-xs text-[#FF6B35]">
+                    <Trash2 className="w-3 h-3" />
+                    Usunięte
+                  </span>
+                )}
+              </h3>
+              {ticket.device?.id && (
+                <button
+                  type="button"
+                  onClick={() => onOpenDevice(ticket.device!.id)}
+                  className="rounded-lg border border-[#A78BFA]/30 bg-[#A78BFA]/10 px-3 py-2 text-sm text-[#C4B5FD] hover:bg-[#A78BFA]/20 transition-colors"
+                >
+                  Otwórz urządzenie
+                </button>
+              )}
+            </div>
 
             <div className="bg-[#121B2D] rounded-lg p-4 border border-[#1A2642]">
               <div className="grid grid-cols-2 gap-4">

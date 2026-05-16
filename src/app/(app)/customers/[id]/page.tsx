@@ -9,7 +9,9 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const customer = await prisma.customer.findUnique({
     where: { id },
     include: {
-      devices: true,
+      devices: {
+        orderBy: { updatedAt: 'desc' },
+      },
       tickets: {
         include: { device: true },
         orderBy: { createdAt: 'desc' },
@@ -20,13 +22,14 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   if (!customer) return notFound();
 
-  const activeStatuses = [TicketStatus.NEW, TicketStatus.IN_PROGRESS, TicketStatus.WAITING];
+  const activeStatuses: TicketStatus[] = [TicketStatus.NEW, TicketStatus.IN_PROGRESS, TicketStatus.WAITING];
 
   const devices = customer.devices.map((d) => ({
     id: d.id,
     name: d.name,
     model: d.model,
     serial: d.serial,
+    isDeleted: d.isDeleted,
     type: 'device',
   }));
 

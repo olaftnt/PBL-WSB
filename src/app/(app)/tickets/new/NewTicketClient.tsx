@@ -35,9 +35,13 @@ type CreateDevicePayload = {
 export default function NewTicketClient({
   customers,
   devices,
+  initialCustomerId,
+  initialDeviceId,
 }: {
   customers: Customer[];
   devices: Device[];
+  initialCustomerId?: string;
+  initialDeviceId?: string;
 }) {
   const router = useRouter();
 
@@ -45,6 +49,8 @@ export default function NewTicketClient({
     <NewTicket
       customers={customers}
       devices={devices}
+      initialCustomerId={initialCustomerId}
+      initialDeviceId={initialDeviceId}
       onCancel={() => router.push('/tickets')}
       onCreated={(ticketId: string) => router.push(`/tickets/${ticketId}`)}
       onCreate={async (payload) => {

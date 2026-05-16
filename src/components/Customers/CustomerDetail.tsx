@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Mail, Phone, Edit, Ticket, Smartphone } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Edit, Ticket, Smartphone, Trash2 } from 'lucide-react';
 import { TicketPriority, TicketStatus } from '@prisma/client';
 import { updateCustomer } from '@/app/(app)/_actions/customers';
 import { viewToPath } from '@/lib/viewRouter';
@@ -32,6 +32,7 @@ type CustomerDevice = {
   name: string;
   model?: string | null;
   serial?: string | null;
+  isDeleted?: boolean;
   type?: string | null;
 };
 
@@ -248,11 +249,25 @@ export function CustomerDetail({ customer, tickets, devices }: CustomerDetailPro
                 <button
                   key={device.id}
                   onClick={() => router.push(viewToPath('device-detail', device.id))}
-                  className="w-full bg-[#121B2D] rounded-lg p-4 border border-[#1A2642] hover:border-[#00FF88] transition-all text-left flex items-start gap-3"
+                  className={`w-full bg-[#121B2D] rounded-lg p-4 border hover:border-[#00FF88] transition-all text-left flex items-start gap-3 ${
+                    device.isDeleted ? 'border-[#FF6B35]/40 opacity-75' : 'border-[#1A2642]'
+                  }`}
                 >
-                  <Smartphone className="w-10 h-10 text-[#A78BFA] mt-1" />
+                  {device.isDeleted ? (
+                    <Trash2 className="w-10 h-10 text-[#FF6B35] mt-1" />
+                  ) : (
+                    <Smartphone className="w-10 h-10 text-[#A78BFA] mt-1" />
+                  )}
                   <div className="flex-1">
-                    <p className="text-white mb-1">{device.name}{device.model ? ` ${device.model}` : ''}</p>
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <p className="text-white">{device.name}{device.model ? ` ${device.model}` : ''}</p>
+                      {device.isDeleted && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[#FF6B35]/30 bg-[#FF6B35]/10 px-2 py-0.5 text-xs text-[#FF6B35]">
+                          <Trash2 className="w-3 h-3" />
+                          Usunięte
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[#94A3B8] text-sm mb-1">Type: <span className="capitalize">{device.type ?? 'device'}</span></p>
                     <p className="text-[#64748B] text-sm">Serial: {device.serial ?? '—'}</p>
                   </div>

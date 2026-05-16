@@ -80,6 +80,9 @@ export default function TicketDetailClient({
       onOpenTicket={(id: string) => {
         router.push(`/tickets/${id}`);
       }}
+      onOpenDevice={(id: string) => {
+        router.push(`/devices/${id}`);
+      }}
       onConsumeReservedPart={async (partId: string) => {
         await consumeReservedPartForTicket({
           ticketId: ticket.id,

@@ -39,6 +39,7 @@ export default async function DeviceDetailPage({ params }: { params: Promise<{ i
         model: device.model,
         serial: device.serial,
         notes: device.notes,
+        isDeleted: device.isDeleted,
         customer: {
           id: device.customer.id,
           name: device.customer.name,

@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { Plus, Search, Smartphone } from 'lucide-react';
+import { Plus, Search, Smartphone, Trash2 } from 'lucide-react';
 import type { View } from '@/types/view';
 import type { DeviceListItem } from '@/types/device';
 import type { CustomerListItem } from '@/types/customer';
@@ -19,6 +19,7 @@ interface DeviceListProps {
 
 export function DeviceList({ onNavigate, devices, customers, onCreateDevice }: DeviceListProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibilityFilter, setVisibilityFilter] = useState<'active' | 'deleted' | 'all'>('active');
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState('');
   const [model, setModel] = useState('');
@@ -34,6 +35,9 @@ export function DeviceList({ onNavigate, devices, customers, onCreateDevice }: D
     const q = searchQuery.trim().toLowerCase();
     const list = devices ?? [];
     return list.filter((device) => {
+      if (visibilityFilter === 'active' && device.isDeleted) return false;
+      if (visibilityFilter === 'deleted' && !device.isDeleted) return false;
+
       if (!q) return true;
       return (
         device.name.toLowerCase().includes(q) ||
@@ -42,7 +46,7 @@ export function DeviceList({ onNavigate, devices, customers, onCreateDevice }: D
         device.customerName.toLowerCase().includes(q)
       );
     });
-  }, [devices, searchQuery]);
+  }, [devices, searchQuery, visibilityFilter]);
 
   const resetForm = () => {
     setName('');
@@ -107,30 +111,56 @@ export function DeviceList({ onNavigate, devices, customers, onCreateDevice }: D
 
       {/* Filters */}
       <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" />
-          <input
-            type="text"
-            placeholder="Szukaj po nazwie, modelu, numerze seryjnym lub kliencie..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative md:col-span-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" />
+            <input
+              type="text"
+              placeholder="Szukaj po nazwie, modelu, numerze seryjnym lub kliencie..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
+            />
+          </div>
+          <select
+            value={visibilityFilter}
+            onChange={(e) => setVisibilityFilter(e.target.value as 'active' | 'deleted' | 'all')}
+            className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
+          >
+            <option value="active">Aktywne urządzenia</option>
+            <option value="deleted">Usunięte urządzenia</option>
+            <option value="all">Wszystkie urządzenia</option>
+          </select>
         </div>
       </div>
 
       {/* Device Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDevices.map((device) => (
-          <button
+          <div
             key={device.id}
+            role="button"
+            tabIndex={0}
             onClick={() => onNavigate('device-detail', device.id)}
-            className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg hover:border-[#00FF88] transition-all text-left group"
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                onNavigate('device-detail', device.id);
+              }
+            }}
+            className={`bg-[#0C1222] rounded-xl p-6 border shadow-lg hover:border-[#00FF88] transition-all text-left group ${
+              device.isDeleted ? 'border-[#FF6B35]/40 opacity-75' : 'border-[#1A2642]'
+            }`}
           >
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-[#A78BFA] to-[#8B5CF6] rounded-lg flex items-center justify-center text-white">
                 {getDeviceIcon()}
               </div>
+              {device.isDeleted && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-[#FF6B35]/30 bg-[#FF6B35]/10 px-2 py-1 text-xs text-[#FF6B35]">
+                  <Trash2 className="w-3 h-3" />
+                  Usunięte
+                </span>
+              )}
             </div>
             <h3 className="text-white mb-1 group-hover:text-[#00FF88] transition-colors">
               {device.name} {device.model ?? ''}
@@ -140,7 +170,7 @@ export function DeviceList({ onNavigate, devices, customers, onCreateDevice }: D
               <p className="text-[#94A3B8] text-sm">{device.customerName}</p>
               <span className="text-[#64748B] text-xs">Naprawy: {device.tickets}</span>
             </div>
-          </button>
+          </div>
         ))}
       </div>
 

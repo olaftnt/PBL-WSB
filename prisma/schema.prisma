@@ -68,6 +68,7 @@ model Device {
   serial     String?
   model      String?
   notes      String?
+  isDeleted  Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

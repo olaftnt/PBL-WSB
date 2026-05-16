@@ -6,6 +6,7 @@ export type DeviceListItem = {
   customerId: string;
   customerName: string;
   tickets: number;
+  isDeleted?: boolean;
   createdAt: string;
 };
 

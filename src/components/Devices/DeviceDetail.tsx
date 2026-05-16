@@ -2,9 +2,9 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Laptop, User, Ticket, Edit } from 'lucide-react';
+import { ArrowLeft, Laptop, User, Ticket, Edit, Trash2, RotateCcw } from 'lucide-react';
 import { TicketStatus } from '@prisma/client';
-import { updateDevice } from '@/app/(app)/_actions/devices';
+import { setDeviceDeleted, updateDevice } from '@/app/(app)/_actions/devices';
 import { viewToPath } from '@/lib/viewRouter';
 
 type DeviceSummary = {
@@ -13,6 +13,7 @@ type DeviceSummary = {
   model: string | null;
   serial: string | null;
   notes: string | null;
+  isDeleted: boolean;
   customer: { id: string; name: string; email: string | null };
   ticketsCount: number;
 };
@@ -51,6 +52,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
   const [notes, setNotes] = useState(device.notes ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTogglingDeleted, setIsTogglingDeleted] = useState(false);
 
   const handleUpdate = async (e: FormEvent) => {
     e.preventDefault();
@@ -78,6 +80,18 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
     }
   };
 
+  const handleToggleDeleted = async () => {
+    setIsTogglingDeleted(true);
+    try {
+      await setDeviceDeleted({ id: device.id, isDeleted: !device.isDeleted });
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message ?? 'Nie udało się zmienić statusu urządzenia.');
+    } finally {
+      setIsTogglingDeleted(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -94,20 +108,42 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
               <Laptop className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-white text-2xl mb-1">
-                {device.name} {device.model ?? ''}
-              </h1>
+              <div className="mb-1 flex flex-wrap items-center gap-3">
+                <h1 className="text-white text-2xl">
+                  {device.name} {device.model ?? ''}
+                </h1>
+                {device.isDeleted && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#FF6B35]/30 bg-[#FF6B35]/10 px-3 py-1 text-xs text-[#FF6B35]">
+                    <Trash2 className="w-3 h-3" />
+                    Usunięte
+                  </span>
+                )}
+              </div>
               <p className="text-[#94A3B8]">Serial: {device.serial ?? '—'}</p>
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setIsEditOpen(true)}
-          className="px-6 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2"
-        >
-          <Edit className="w-5 h-5" />
-          Edytuj urządzenie
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleToggleDeleted}
+            disabled={isTogglingDeleted}
+            className={`px-6 py-3 rounded-lg border transition-colors flex items-center gap-2 disabled:opacity-60 ${
+              device.isDeleted
+                ? 'bg-[#00FF88]/10 border-[#00FF88]/30 text-[#00FF88] hover:bg-[#00FF88]/20'
+                : 'bg-[#FF6B35]/10 border-[#FF6B35]/30 text-[#FF6B35] hover:bg-[#FF6B35]/20'
+            }`}
+          >
+            {device.isDeleted ? <RotateCcw className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
+            {device.isDeleted ? 'Przywróć' : 'Usuń'}
+          </button>
+          <button
+            onClick={() => setIsEditOpen(true)}
+            className="px-6 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white hover:border-[#00FF88] transition-colors flex items-center gap-2"
+          >
+            <Edit className="w-5 h-5" />
+            Edytuj urządzenie
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -160,7 +196,7 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
                 Powiązane zgłoszenia
               </h3>
               <button
-                onClick={() => router.push('/tickets/new')}
+                onClick={() => router.push(`/tickets/new?customerId=${device.customer.id}&deviceId=${device.id}`)}
                 className="px-4 py-2 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform text-sm"
               >
                 Nowe zgłoszenie

@@ -39,6 +39,8 @@ export type CreateDevicePayload = {
 interface NewTicketProps {
   customers: Customer[];
   devices: Device[];
+  initialCustomerId?: string;
+  initialDeviceId?: string;
 
   onCreate: (payload: {
     customerId: string;
@@ -62,17 +64,31 @@ interface NewTicketProps {
 export function NewTicket({
   customers,
   devices,
+  initialCustomerId,
+  initialDeviceId,
   onCreate,
   onCreateCustomer,
   onCreateDevice,
   onCancel,
   onCreated,
 }: NewTicketProps) {
+  const initialDevice = initialDeviceId
+    ? devices.find((device) => device.id === initialDeviceId) ?? null
+    : null;
+  const initialCustomer =
+    (initialDevice
+      ? customers.find((customer) => customer.id === initialDevice.customerId)
+      : null) ??
+    (initialCustomerId
+      ? customers.find((customer) => customer.id === initialCustomerId)
+      : null) ??
+    null;
+
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showDeviceModal, setShowDeviceModal] = useState(false);
 
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(initialCustomer);
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(initialDevice);
 
   const [submitting, setSubmitting] = useState(false);
 
