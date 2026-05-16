@@ -1,8 +1,10 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { QuoteStatus, TicketEventType } from '@prisma/client';
+import { QuotePublicAccess, QuoteStatus, TicketEventType } from '@prisma/client';
+import { getDefaultQuotePublicAccess } from '@/lib/globalSearchSettings';
 import type { QuoteItemInput } from '@/types/quote';
+import { maybeAdvanceNewTicketAfterQuotesAccepted } from '@/lib/maybeAdvanceNewTicketAfterQuotesAccepted';
 import { releaseQuotePartReservations, reserveQuoteParts } from '@/lib/quoteReservations';
 
 const computeTotals = (laborHours: number, laborRate: number, vatRate: number, items: QuoteItemInput[]) => {
@@ -76,8 +78,15 @@ export async function saveQuote(input: SaveQuoteInput) {
     notes,
     items,
     status = QuoteStatus.DRAFT,
-    publicAccess = 'HIDDEN',
+    publicAccess,
   } = input;
+
+  const resolvedPublicAccess: QuotePublicAccess =
+    publicAccess !== undefined
+      ? (publicAccess as QuotePublicAccess)
+      : !id
+        ? await getDefaultQuotePublicAccess()
+        : QuotePublicAccess.HIDDEN;
 
   if (!ticketId) throw new Error('ID zgłoszenia jest wymagane');
   if (!customerId) throw new Error('ID klienta jest wymagane');
@@ -155,7 +164,7 @@ export async function saveQuote(input: SaveQuoteInput) {
           vatRate,
           notes: notes || null,
           status,
-          publicAccess,
+          publicAccess: resolvedPublicAccess,
           totalNet: totals.net,
           totalVat: totals.vat,
           totalGross: totals.gross,
@@ -176,6 +185,7 @@ export async function saveQuote(input: SaveQuoteInput) {
             author: 'user',
           },
         });
+        await maybeAdvanceNewTicketAfterQuotesAccepted(tx, updated.ticketId);
       }
 
       return {
@@ -216,7 +226,7 @@ export async function saveQuote(input: SaveQuoteInput) {
         vatRate,
         notes: notes || null,
         status,
-        publicAccess,
+        publicAccess: resolvedPublicAccess,
         totalNet: totals.net,
         totalVat: totals.vat,
         totalGross: totals.gross,
@@ -258,6 +268,7 @@ export async function saveQuote(input: SaveQuoteInput) {
           author: 'user',
         },
       });
+      await maybeAdvanceNewTicketAfterQuotesAccepted(tx, ticketId);
     }
 
     return { id: quote.id, status: quote.status };
@@ -303,6 +314,7 @@ export async function updateQuoteStatus(id: string, status: QuoteStatus) {
           author: 'user',
         },
       });
+      await maybeAdvanceNewTicketAfterQuotesAccepted(tx, quote.ticketId);
     }
 
     return {

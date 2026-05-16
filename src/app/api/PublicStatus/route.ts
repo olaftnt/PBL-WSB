@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { maybeAdvanceNewTicketAfterQuotesAccepted } from '@/lib/maybeAdvanceNewTicketAfterQuotesAccepted';
 import { reserveQuoteParts } from '@/lib/quoteReservations';
 
 
@@ -308,6 +309,8 @@ export async function PATCH(req: Request) {
             author: 'klient',
           },
         });
+
+        await maybeAdvanceNewTicketAfterQuotesAccepted(tx, ticket.id);
       });
     }
 

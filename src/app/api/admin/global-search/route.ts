@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { QuotePublicAccess } from '@prisma/client';
 import { getGlobalSearchSettingsResolved } from '@/lib/globalSearchSettings';
 import {
   GLOBAL_SEARCH_CATEGORY_KEYS,
@@ -55,6 +56,8 @@ export async function PUT(req: Request) {
       id: SINGLETON_ID,
       globalSearchEnabled: payload.globalSearchEnabled,
       globalSearchCategories: categories,
+      defaultQuotePublicAccess: QuotePublicAccess.HIDDEN,
+      autoAdvanceNewTicketWhenAllQuotesAccepted: false,
     },
     update: {
       globalSearchEnabled: payload.globalSearchEnabled,

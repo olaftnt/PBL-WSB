@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { QuoteDetail } from '@/components/Quotes/QuoteDetail';
 import type { PartOption, TicketOption, CustomerOption } from '@/types/quote';
 import type { QuoteStatus } from '@prisma/client';
+import { getDefaultQuotePublicAccess } from '@/lib/globalSearchSettings';
 
 export default async function QuoteDetailPage({
   params,
@@ -58,13 +59,15 @@ export default async function QuoteDetailPage({
   const selectedTicket = ticketOptions.find((ticket) => ticket.id === selectedTicketId);
 
   if (id === 'new') {
+    const defaultQuotePublicAccess = await getDefaultQuotePublicAccess();
+
     return (
       <QuoteDetail
         initialQuote={{
           id: 'new',
           number: 'NEW',
           status: 'DRAFT' as QuoteStatus,
-          publicAccess: 'HIDDEN',
+          publicAccess: defaultQuotePublicAccess,
           ticketId: selectedTicket?.id ?? '',
           ticketNumber: selectedTicket?.number ?? '',
           customerId: selectedTicket?.customerId ?? '',

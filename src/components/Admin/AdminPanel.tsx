@@ -13,6 +13,7 @@ import {
   Trash2,
   TrendingUp,
   Search,
+  SlidersHorizontal,
 } from 'lucide-react';
 import type { GlobalSearchCategories } from '@/types/global-search-settings';
 import {
@@ -190,9 +191,218 @@ function AdminGlobalSearchSettings() {
   );
 }
 
+function AdminQuotesTicketsSettings() {
+  type QuoteAccessOption = 'PUBLIC' | 'VIEW_ONLY' | 'HIDDEN';
+
+  const OPTIONS: { value: QuoteAccessOption; label: string; hint: string }[] = [
+    {
+      value: 'PUBLIC',
+      label: 'Publiczny',
+      hint: 'Klient widzi kosztorys na statusie publicznym i może go zaakceptować.',
+    },
+    {
+      value: 'VIEW_ONLY',
+      label: 'Widoczny (tylko podgląd)',
+      hint: 'Klient widzi kosztorys, bez możliwości akceptacji online.',
+    },
+    {
+      value: 'HIDDEN',
+      label: 'Ukryty (prywatny)',
+      hint: 'Widzi tylko serwis; nie pokazuje się klienciowi na statusie publicznym.',
+    },
+  ];
+
+  const [access, setAccess] = useState<QuoteAccessOption>('HIDDEN');
+  const [autoAdvanceWhenAllQuotesAccepted, setAutoAdvanceWhenAllQuotesAccepted] =
+    useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/quote-settings');
+        let data: Record<string, unknown> = {};
+        try {
+          data = (await res.json()) as Record<string, unknown>;
+        } catch {
+          /* odpowiedź nie-JSON, np. błąd proxy */
+        }
+        if (!res.ok) {
+          const hint =
+            typeof data.error === 'string'
+              ? data.error
+              : `Serwer zwrócił ${res.status}. Sprawdź log terminala (np. migracje Prisma).`;
+          setMessage(`Nie udało się wczytać ustawień kosztorysu: ${hint}`);
+          return;
+        }
+        if (cancelled) return;
+        const v = data.defaultQuotePublicAccess;
+        if (v === 'PUBLIC' || v === 'VIEW_ONLY' || v === 'HIDDEN') {
+          setAccess(v);
+        }
+        if (typeof data.autoAdvanceNewTicketWhenAllQuotesAccepted === 'boolean') {
+          setAutoAdvanceWhenAllQuotesAccepted(data.autoAdvanceNewTicketWhenAllQuotesAccepted);
+        }
+      } catch {
+        setMessage(
+          'Nie udało się wczytać ustawień kosztorysu (brak sieci lub serwer niedostępny).',
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/quote-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          defaultQuotePublicAccess: access,
+          autoAdvanceNewTicketWhenAllQuotesAccepted: autoAdvanceWhenAllQuotesAccepted,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data?.error ?? 'Nie udało się zapisać.');
+        return;
+      }
+      const v = data.defaultQuotePublicAccess;
+      if (v === 'PUBLIC' || v === 'VIEW_ONLY' || v === 'HIDDEN') setAccess(v);
+      if (typeof data.autoAdvanceNewTicketWhenAllQuotesAccepted === 'boolean') {
+        setAutoAdvanceWhenAllQuotesAccepted(data.autoAdvanceNewTicketWhenAllQuotesAccepted);
+      }
+      setMessage('Zapisano.');
+    } catch {
+      setMessage('Nie udało się zapisać.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-white text-xl mb-1">Zlecenia i kosztorysy</h2>
+        <p className="text-[#94A3B8] text-sm">
+          Domyślne ustawienia dla nowych kosztorysów powiązanych ze zgłoszeniami.
+        </p>
+      </div>
+
+      <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg space-y-6">
+        {loading ? (
+          <p className="text-[#94A3B8] text-sm">Wczytywanie…</p>
+        ) : (
+          <>
+            <div>
+              <h3 className="text-white font-medium mb-1">Domyślna widoczność nowego kosztorysu</h3>
+              <p className="text-[#64748B] text-sm mb-4">
+                Dotyczy widoku na stronie{' '}
+                <span className="text-[#94A3B8]">statusu publicznego</span> — wartość wstępnie ustawiona na
+                formularzu „Nowy kosztorys” oraz używana przy pierwszym zapisie, jeśli nie zmienisz pola
+                ręcznie.
+              </p>
+
+              <div className="space-y-3">
+                {OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className={`flex gap-4 rounded-lg border px-4 py-3 cursor-pointer transition-colors ${
+                      access === opt.value
+                        ? 'border-[#00FF88]/50 bg-[#00FF88]/5'
+                        : 'border-[#1A2642] bg-[#121B2D] hover:border-[#2a3f66]'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="defaultQuotePublicAccess"
+                      className="mt-1"
+                      checked={access === opt.value}
+                      onChange={() => setAccess(opt.value)}
+                      disabled={saving}
+                    />
+                    <div>
+                      <div className="text-white font-medium">{opt.label}</div>
+                      <div className="text-[#64748B] text-sm mt-1">{opt.hint}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-[#1A2642] pt-6">
+              <h3 className="text-white font-medium mb-1">Automatyczny status „W trakcie” po akceptacji kosztorysów</h3>
+              <p className="text-[#64748B] text-sm mb-4">
+                Dla zleceń w statusie{' '}
+                <span className="text-[#94A3B8]">Nowe</span>: jeśli wszystkie powiązane kosztorysy
+                mają status zaakceptowany, zlecenie przechodzi automatycznie na{' '}
+                <span className="text-[#94A3B8]">W trakcie</span>. Dotyczy akceptacji w panelu oraz
+                przez klienta na statusie publicznym.
+              </p>
+              <div className="flex items-center justify-between gap-4 flex-wrap rounded-lg border border-[#1A2642] bg-[#121B2D] px-4 py-3">
+                <div>
+                  <p className="text-white font-medium">Włącz automatyczne przejście</p>
+                  <p className="text-[#64748B] text-sm mt-1">
+                    Gdy wyłączone, status zlecenia trzeba zmienić ręcznie.
+                  </p>
+                </div>
+                <label className="relative inline-block w-14 h-8 shrink-0 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={autoAdvanceWhenAllQuotesAccepted}
+                    onChange={(e) => setAutoAdvanceWhenAllQuotesAccepted(e.target.checked)}
+                    disabled={saving}
+                  />
+                  <div className="w-14 h-8 bg-[#121B2D] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#00FF88]" />
+                </label>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-[#1A2642]">
+              <button
+                type="button"
+                onClick={() => void save()}
+                disabled={loading || saving}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg font-medium hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {saving ? 'Zapisywanie…' : 'Zapisz'}
+              </button>
+              {message && (
+                <span
+                  className={`text-sm ${
+                    message === 'Zapisano.' ? 'text-[#00FF88]' : 'text-[#FF6B35]'
+                  }`}
+                >
+                  {message}
+                </span>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AdminPanel() {
   const [activeTab, setActiveTab] = useState<
-    'users' | 'roles' | 'sla' | 'notifications' | 'analytics' | 'global-search'
+    | 'users'
+    | 'roles'
+    | 'sla'
+    | 'notifications'
+    | 'analytics'
+    | 'quotes-tickets'
+    | 'global-search'
   >('users');
 
   const users = [
@@ -236,6 +446,7 @@ export function AdminPanel() {
     { id: 'sla' as const, label: 'Konfiguracja SLA', icon: Clock },
     { id: 'notifications' as const, label: 'Powiadomienia', icon: Bell },
     { id: 'analytics' as const, label: 'Analityka', icon: BarChart3 },
+    { id: 'quotes-tickets' as const, label: 'Zlecenia i kosztorysy', icon: SlidersHorizontal },
     { id: 'global-search' as const, label: 'Wyszukiwanie globalne', icon: Search },
   ];
 
@@ -479,6 +690,8 @@ export function AdminPanel() {
           </div>
         </div>
       )}
+
+      {activeTab === 'quotes-tickets' && <AdminQuotesTicketsSettings />}
 
       {activeTab === 'global-search' && <AdminGlobalSearchSettings />}
     </div>

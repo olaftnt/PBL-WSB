@@ -240,5 +240,12 @@ model AppSettings {
   globalSearchEnabled     Boolean @default(true)
   /** Obiekt: ticket, customer, device, quote, part → widoczność w Global Search */
   globalSearchCategories  Json?
-  updatedAt               DateTime @updatedAt
+  /** Domyślna widoczność nowego kosztorysu na stronie statusu publicznego */
+  defaultQuotePublicAccess QuotePublicAccess @default(HIDDEN)
+  /**
+   * Gdy włączone: zlecenie w statusie Nowe dostaje automatycznie status W trakcie,
+   * gdy wszystkie powiązane kosztorysy mają status Zaakceptowane.
+   */
+  autoAdvanceNewTicketWhenAllQuotesAccepted Boolean @default(false)
+  updatedAt                                  DateTime @updatedAt
 }
