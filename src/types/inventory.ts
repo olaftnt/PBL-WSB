@@ -2,6 +2,7 @@ export type PartListItem = {
   id: string;
   sku: string;
   name: string;
+  warehouseLocation: string | null;
   quantity: number;
   minQuantity: number;
   price: number;

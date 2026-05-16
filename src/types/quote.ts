@@ -56,6 +56,7 @@ export type PartOption = {
   id: string;
   sku: string;
   name: string;
+  warehouseLocation: string | null;
   price: number;
   quantity: number;
   reserved: number;

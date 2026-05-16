@@ -8,15 +8,18 @@ import { createPart, updatePart, reservePart, consumePart } from '../_actions/in
 export default function InventoryClient({
   parts,
   tickets,
+  focusPartId,
 }: {
   parts: PartListItem[];
   tickets: TicketOption[];
+  focusPartId?: string;
 }) {
   const router = useRouter();
 
   const onCreate = async (payload: {
     sku: string;
     name: string;
+    warehouseLocation: string | null;
     quantity: number;
     minQuantity: number;
     price: number;
@@ -29,6 +32,7 @@ export default function InventoryClient({
   const onUpdate = async (id: string, payload: Partial<{
     sku: string;
     name: string;
+    warehouseLocation: string | null;
     quantity: number;
     minQuantity: number;
     price: number;
@@ -54,6 +58,7 @@ export default function InventoryClient({
     <InventoryList
       parts={parts}
       tickets={tickets}
+      focusPartId={focusPartId}
       onCreatePart={onCreate}
       onUpdatePart={onUpdate}
       onReserve={onReserve}

@@ -28,6 +28,8 @@ export function viewToPath(view: View, id?: string): string {
       return '/quotes';
     case 'quote-detail':
       return `/quotes/${id ?? '1'}`;
+    case 'knowledge-base':
+      return '/knowledge-base';
     case 'admin':
       return '/admin';
     default:

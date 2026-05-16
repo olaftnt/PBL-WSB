@@ -1,17 +1,20 @@
-import { 
-  LayoutDashboard, 
-  Ticket, 
-  Users, 
-  Smartphone, 
-  Globe, 
-  Clock, 
-  Package, 
-  FileText, 
+import {
+  LayoutDashboard,
+  Ticket,
+  Users,
+  Smartphone,
+  Globe,
+  Clock,
+  Package,
+  FileText,
   Settings,
   LogOut,
-  Bell
+  Bell,
+  BookOpen,
 } from 'lucide-react';
+import type { ComponentType } from 'react';
 import type { View } from '@/types/view';
+import { viewToPath } from '@/lib/viewRouter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,16 +22,24 @@ interface LayoutProps {
   onNavigate: (view: View) => void;
 }
 
-const menuItems = [
-  { id: 'dashboard' as View, label: 'Panel główny', icon: LayoutDashboard },
-  { id: 'tickets' as View, label: 'Zgłoszenia', icon: Ticket },
-  { id: 'customers' as View, label: 'Klienci', icon: Users },
-  { id: 'devices' as View, label: 'Urządzenia', icon: Smartphone },
-  { id: 'public-status' as View, label: 'Status publiczny', icon: Globe },
-  { id: 'sla' as View, label: 'SLA i Śledzenie', icon: Clock },
-  { id: 'inventory' as View, label: 'Magazyn', icon: Package },
-  { id: 'quotes' as View, label: 'Kosztorysy', icon: FileText },
-  //{ id: 'admin' as View, label: 'Panel admina', icon: Settings },
+type LayoutMenuItem = {
+  id: View;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  openInNewTab?: boolean;
+};
+
+const menuItems: LayoutMenuItem[] = [
+  { id: 'dashboard', label: 'Panel główny', icon: LayoutDashboard },
+  { id: 'tickets', label: 'Zgłoszenia', icon: Ticket },
+  { id: 'customers', label: 'Klienci', icon: Users },
+  { id: 'devices', label: 'Urządzenia', icon: Smartphone },
+  { id: 'quotes', label: 'Kosztorysy', icon: FileText },
+  { id: 'inventory', label: 'Magazyn', icon: Package },
+  { id: 'sla', label: 'SLA i Śledzenie', icon: Clock },
+  { id: 'public-status', label: 'Status publiczny', icon: Globe, openInNewTab: true },
+  { id: 'knowledge-base', label: 'Baza wiedzy', icon: BookOpen },
+  { id: 'admin', label: 'Panel admina', icon: Settings },
 ];
 
 export function Layout({ children, currentView, onNavigate }: LayoutProps) {
@@ -51,15 +62,33 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
+              const className = `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                isActive
+                  ? 'bg-gradient-to-r from-[#00FF88]/10 to-[#00CC6A]/5 text-[#00FF88] border-l-2 border-[#00FF88]'
+                  : 'text-[#94A3B8] hover:bg-[#121B2D] hover:text-white'
+              }`;
+
+              if (item.openInNewTab) {
+                return (
+                  <a
+                    key={item.id}
+                    href={viewToPath(item.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={className}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{item.label}</span>
+                  </a>
+                );
+              }
+
               return (
                 <button
                   key={item.id}
+                  type="button"
                   onClick={() => onNavigate(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? 'bg-gradient-to-r from-[#00FF88]/10 to-[#00CC6A]/5 text-[#00FF88] border-l-2 border-[#00FF88]'
-                      : 'text-[#94A3B8] hover:bg-[#121B2D] hover:text-white'
-                  }`}
+                  className={className}
                 >
                   <Icon className="w-5 h-5" />
                   <span>{item.label}</span>

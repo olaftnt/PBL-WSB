@@ -144,6 +144,7 @@ model Part {
   id          String   @id @default(cuid())
   sku         String   @unique
   name        String
+  warehouseLocation String?
   quantity    Int      @default(0)
   minQuantity Int      @default(0)
   price       Decimal  @db.Decimal(10, 2)
@@ -231,4 +232,13 @@ model RepairProtocol {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/** Pojedynczy rekord ustawień aplikacji (singleton `id`). */
+model AppSettings {
+  id                      String @id @default("singleton")
+  globalSearchEnabled     Boolean @default(true)
+  /** Obiekt: ticket, customer, device, quote, part → widoczność w Global Search */
+  globalSearchCategories  Json?
+  updatedAt               DateTime @updatedAt
 }

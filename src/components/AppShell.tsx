@@ -20,19 +20,24 @@ import {
 } from 'lucide-react';
 
 
-type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  openInNewTab?: boolean;
+};
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
   { href: '/tickets', label: 'Zlecenia', icon: Ticket },
   { href: '/customers', label: 'Klienci', icon: Users },
   { href: '/devices', label: 'Urządzenia', icon: Smartphone },
-  { href: '/public-status', label: 'Status Publiczny', icon: Globe },
-  { href: '/sla', label: 'SLA & Tracking', icon: Clock },
-  { href: '/inventory', label: 'Magazyn', icon: Package },
   { href: '/quotes', label: 'Kosztorysy', icon: FileText },
+  { href: '/inventory', label: 'Magazyn', icon: Package },
+  { href: '/sla', label: 'SLA & Tracking', icon: Clock },
+  { href: '/public-status', label: 'Status Publiczny', icon: Globe, openInNewTab: true },
   { href: '/knowledge-base', label: 'Baza wiedzy', icon: BookOpen },
-  //{ href: '/admin', label: 'Admin', icon: Settings },
+  { href: '/admin', label: 'Admin', icon: Settings },
 ];
 
 function getTitleFromPath(pathname: string | null) {
@@ -41,8 +46,8 @@ function getTitleFromPath(pathname: string | null) {
   if (pathname.startsWith('/tickets')) return 'Zlecenia';
   if (pathname.startsWith('/customers')) return 'Klienci';
   if (pathname.startsWith('/devices')) return 'Urządzenia';
-  if (pathname.startsWith('/public-status')) return 'Status Publiczny';
   if (pathname.startsWith('/sla')) return 'SLA & Tracking';
+  if (pathname.startsWith('/public-status')) return 'Status Publiczny';
   if (pathname.startsWith('/inventory')) return 'Magazyn';
   if (pathname.startsWith('/quotes')) return 'Kosztorysy';
   if (pathname.startsWith('/knowledge-base')) return 'Baza wiedzy';
@@ -94,13 +99,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 (item.href === '/tickets' && pathname?.startsWith('/tickets')) ||
                 (item.href === '/customers' && pathname?.startsWith('/customers')) ||
                 (item.href === '/devices' && pathname?.startsWith('/devices')) ||
+                (item.href === '/inventory' && pathname?.startsWith('/inventory')) ||
                 (item.href === '/quotes' && pathname?.startsWith('/quotes')) ||
-                (item.href === '/knowledge-base' && pathname?.startsWith('/knowledge-base'));
+                (item.href === '/knowledge-base' && pathname?.startsWith('/knowledge-base')) ||
+                (item.href === '/public-status' && pathname?.startsWith('/public-status')) ||
+                (item.href === '/sla' && pathname?.startsWith('/sla')) ||
+                (item.href === '/admin' && pathname?.startsWith('/admin'));
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  target={item.openInNewTab ? '_blank' : undefined}
+                  rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+                  prefetch={item.openInNewTab ? false : undefined}
                   className={[
                     'flex items-center gap-3 px-4 py-3 rounded-2xl transition',
                     active ? 'bg-[#0b5cff]/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/5',

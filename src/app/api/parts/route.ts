@@ -11,6 +11,7 @@ export async function GET() {
       id: part.id,
       sku: part.sku,
       name: part.name,
+      warehouseLocation: part.warehouseLocation,
       price: Number(part.price),
       quantity: part.quantity,
       reserved: part.reserved,

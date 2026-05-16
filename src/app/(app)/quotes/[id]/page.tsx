@@ -40,6 +40,7 @@ export default async function QuoteDetailPage({
     id: p.id,
     sku: p.sku,
     name: p.name,
+    warehouseLocation: p.warehouseLocation ?? null,
     price: Number(p.price),
     quantity: p.quantity,
     reserved: p.reserved,

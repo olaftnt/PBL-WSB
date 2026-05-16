@@ -12,4 +12,5 @@ export type View =
   | 'inventory'
   | 'quotes'
   | 'quote-detail'
+  | 'knowledge-base'
   | 'admin';

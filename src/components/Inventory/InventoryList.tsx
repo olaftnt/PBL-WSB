@@ -1,19 +1,30 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
-import { Plus, Search, AlertTriangle, Package, Edit, Minus, BookmarkPlus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { Plus, Search, AlertTriangle, Package, Edit, Minus } from 'lucide-react';
 import type { PartListItem, TicketOption } from '@/types/inventory';
 
 type InventoryListProps = {
   parts: PartListItem[];
   tickets: TicketOption[];
-  onCreatePart: (payload: { sku: string; name: string; quantity: number; minQuantity: number; price: number; }) => Promise<any>;
-  onUpdatePart: (id: string, payload: Partial<{ sku: string; name: string; quantity: number; minQuantity: number; price: number; }>) => Promise<any>;
+  focusPartId?: string;
+  onCreatePart: (payload: { sku: string; name: string; warehouseLocation: string | null; quantity: number; minQuantity: number; price: number; }) => Promise<any>;
+  onUpdatePart: (id: string, payload: Partial<{ sku: string; name: string; warehouseLocation: string | null; quantity: number; minQuantity: number; price: number; }>) => Promise<any>;
   onReserve: (partId: string, ticketId: string, quantity: number) => Promise<any>;
   onConsume: (partId: string, quantity: number) => Promise<any>;
 };
 
-export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onReserve, onConsume }: InventoryListProps) {
+export function InventoryList({
+  parts,
+  tickets,
+  focusPartId,
+  onCreatePart,
+  onUpdatePart,
+  onReserve,
+  onConsume,
+}: InventoryListProps) {
+  const deepLinkHandledRef = useRef<string | null>(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -26,6 +37,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
   const [quantity, setQuantity] = useState<number | string>(0);
   const [minQuantity, setMinQuantity] = useState<number | string>(0);
   const [price, setPrice] = useState<number | string>(0);
+  const [warehouseLocation, setWarehouseLocation] = useState('');
 
   const [reserveTicketId, setReserveTicketId] = useState('');
   const [reserveQty, setReserveQty] = useState<number | string>(1);
@@ -33,6 +45,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [flashPartId, setFlashPartId] = useState<string | null>(null);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -49,12 +62,61 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
 
   const filteredParts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return (parts ?? []).filter((part) =>
+    let list = (parts ?? []).filter((part) =>
       !q ||
       part.name.toLowerCase().includes(q) ||
-      part.sku.toLowerCase().includes(q)
+      part.sku.toLowerCase().includes(q) ||
+      (part.warehouseLocation ?? '').toLowerCase().includes(q)
     );
-  }, [parts, searchQuery]);
+    const pinId = focusPartId?.trim();
+    if (pinId && parts?.length && !list.some((p) => p.id === pinId)) {
+      const pinned = parts.find((p) => p.id === pinId);
+      if (pinned) list = [pinned, ...list];
+    }
+    return list;
+  }, [parts, searchQuery, focusPartId]);
+
+  const openEdit = useCallback((part: PartListItem) => {
+    setSelectedPart(part);
+    setSku(part.sku);
+    setName(part.name);
+    setQuantity(part.quantity);
+    setMinQuantity(part.minQuantity);
+    setPrice(part.price);
+    setWarehouseLocation(part.warehouseLocation ?? '');
+    setError(null);
+    setShowEditModal(true);
+  }, []);
+
+  useEffect(() => {
+    const id = focusPartId?.trim();
+    if (!id) {
+      deepLinkHandledRef.current = null;
+      return;
+    }
+    const part = parts.find((p) => p.id === id);
+    if (!part) return;
+    if (deepLinkHandledRef.current === id) return;
+    deepLinkHandledRef.current = id;
+
+    setFlashPartId(id);
+    const clearFlash = window.setTimeout(() => {
+      setFlashPartId((cur) => (cur === id ? null : cur));
+    }, 4000);
+
+    const scrollToRow = () => {
+      document.getElementById(`inventory-part-${id}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    };
+
+    openEdit(part);
+    requestAnimationFrame(() => scrollToRow());
+    window.setTimeout(scrollToRow, 120);
+
+    return () => window.clearTimeout(clearFlash);
+  }, [focusPartId, parts, openEdit]);
 
   const lowStockCount = useMemo(
     () => (parts ?? []).filter((p) => p.status === 'low' || p.status === 'critical').length,
@@ -67,19 +129,9 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
     setQuantity(0);
     setMinQuantity(0);
     setPrice(0);
+    setWarehouseLocation('');
     setError(null);
     setShowAddModal(true);
-  };
-
-  const openEdit = (part: PartListItem) => {
-    setSelectedPart(part);
-    setSku(part.sku);
-    setName(part.name);
-    setQuantity(part.quantity);
-    setMinQuantity(part.minQuantity);
-    setPrice(part.price);
-    setError(null);
-    setShowEditModal(true);
   };
 
   const openReserve = (part: PartListItem) => {
@@ -105,6 +157,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
       await onCreatePart({
         sku: sku.trim(),
         name: name.trim(),
+        warehouseLocation: warehouseLocation.trim() === '' ? null : warehouseLocation.trim(),
         quantity: Number(quantity),
         minQuantity: Number(minQuantity),
         price: Number(price),
@@ -126,6 +179,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
       await onUpdatePart(selectedPart.id, {
         sku: sku.trim(),
         name: name.trim(),
+        warehouseLocation: warehouseLocation.trim() === '' ? null : warehouseLocation.trim(),
         quantity: Number(quantity),
         minQuantity: Number(minQuantity),
         price: Number(price),
@@ -206,7 +260,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" />
             <input
               type="text"
-              placeholder="Szukaj po nazwie lub SKU..."
+              placeholder="Szukaj po nazwie, SKU lub lokalizacji..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
@@ -226,6 +280,7 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
               <tr className="border-b border-[#1A2642]">
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">SKU</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Nazwa</th>
+                <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Lokalizacja</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Ilość</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Zarezerw.</th>
                 <th className="text-left px-6 py-4 text-[#94A3B8] text-sm">Min. ilość</th>
@@ -238,12 +293,23 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
               {filteredParts.map((part) => {
                 const statusBadge = getStatusBadge(part.status);
                 return (
-                  <tr key={part.id} className="border-b border-[#1A2642] hover:bg-[#121B2D] transition-colors">
+                  <tr
+                    key={part.id}
+                    id={`inventory-part-${part.id}`}
+                    className={`border-b border-[#1A2642] hover:bg-[#121B2D] transition-colors scroll-mt-28 ${
+                      flashPartId === part.id ? 'bg-[#0b5cff]/15 outline outline-2 outline-[#0b5cff]/40 outline-offset-[-2px]' : ''
+                    }`}
+                  >
                     <td className="px-6 py-4">
                       <span className="text-white text-sm">{part.sku}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-[#94A3B8]">{part.name}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-[#64748B] text-sm whitespace-pre-wrap break-words max-w-[10rem]">
+                        {part.warehouseLocation ?? '—'}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -325,6 +391,17 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   onChange={(e) => setName(e.target.value)}
                   disabled={isSubmitting}
                   placeholder="iPhone 14 Pro Screen"
+                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-[#94A3B8] text-sm mb-2">Lokalizacja magazynowa</label>
+                <input
+                  type="text"
+                  value={warehouseLocation}
+                  onChange={(e) => setWarehouseLocation(e.target.value)}
+                  disabled={isSubmitting}
+                  placeholder="np. Regał A-3 · Półka 2"
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
                 />
               </div>
@@ -424,6 +501,17 @@ export function InventoryList({ parts, tickets, onCreatePart, onUpdatePart, onRe
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={isSubmitting}
+                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-[#94A3B8] text-sm mb-2">Lokalizacja magazynowa</label>
+                <input
+                  type="text"
+                  value={warehouseLocation}
+                  onChange={(e) => setWarehouseLocation(e.target.value)}
+                  disabled={isSubmitting}
+                  placeholder="np. Regał A-3 · Półka 2"
                   className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
                 />
               </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Users, 
   Shield, 
@@ -11,11 +11,189 @@ import {
   Plus,
   Edit,
   Trash2,
-  TrendingUp
+  TrendingUp,
+  Search,
 } from 'lucide-react';
+import type { GlobalSearchCategories } from '@/types/global-search-settings';
+import {
+  GLOBAL_SEARCH_CATEGORY_KEYS,
+  defaultGlobalSearchCategories,
+} from '@/types/global-search-settings';
+
+const GLOBAL_SEARCH_CATEGORY_LABELS: Record<
+  (typeof GLOBAL_SEARCH_CATEGORY_KEYS)[number],
+  string
+> = {
+  ticket: 'Zlecenia',
+  customer: 'Klienci',
+  device: 'Urządzenia',
+  quote: 'Kosztorysy',
+  part: 'Magazyn (części)',
+};
+
+function AdminGlobalSearchSettings() {
+  const [enabled, setEnabled] = useState(true);
+  const [categories, setCategories] = useState<GlobalSearchCategories>(() =>
+    defaultGlobalSearchCategories(),
+  );
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/global-search');
+        if (!res.ok) throw new Error('fetch');
+        const data = await res.json();
+        if (cancelled) return;
+        if (typeof data.globalSearchEnabled === 'boolean') setEnabled(data.globalSearchEnabled);
+        if (data.categories && typeof data.categories === 'object') {
+          const next = { ...defaultGlobalSearchCategories() };
+          for (const key of GLOBAL_SEARCH_CATEGORY_KEYS) {
+            if (typeof data.categories[key] === 'boolean') next[key] = data.categories[key];
+          }
+          setCategories(next);
+        }
+      } catch {
+        setMessage('Nie udało się wczytać ustawień.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/global-search', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          globalSearchEnabled: enabled,
+          categories,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data?.error ?? 'Nie udało się zapisać.');
+        return;
+      }
+      if (typeof data.globalSearchEnabled === 'boolean') setEnabled(data.globalSearchEnabled);
+      if (data.categories && typeof data.categories === 'object') {
+        const next = { ...defaultGlobalSearchCategories() };
+        for (const key of GLOBAL_SEARCH_CATEGORY_KEYS) {
+          if (typeof data.categories[key] === 'boolean') next[key] = data.categories[key];
+        }
+        setCategories(next);
+      }
+      setMessage('Zapisano.');
+      window.dispatchEvent(new Event('pbl-global-search-updated'));
+    } catch {
+      setMessage('Nie udało się zapisać.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-white text-xl mb-1">Wyszukiwanie globalne</h2>
+        <p className="text-[#94A3B8] text-sm">
+          Włącz lub wyłącz pasek wyszukiwania w nagłówku oraz wybierz, które typy rekordów mają trafiać do wyników.
+        </p>
+      </div>
+
+      <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg space-y-6">
+        {loading ? (
+          <p className="text-[#94A3B8] text-sm">Wczytywanie…</p>
+        ) : (
+          <>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <h3 className="text-white font-medium">Pasek wyszukiwania</h3>
+                <p className="text-[#64748B] text-sm mt-1">
+                  Gdy wyłączony, znika przycisk wyszukiwania i skrót Ctrl+K nie otwiera modala.
+                </p>
+              </div>
+              <label className="relative inline-block w-14 h-8 shrink-0 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={enabled}
+                  onChange={(e) => setEnabled(e.target.checked)}
+                  disabled={saving}
+                />
+                <div className="w-14 h-8 bg-[#121B2D] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#00FF88]" />
+              </label>
+            </div>
+
+            <div className="border-t border-[#1A2642] pt-6 space-y-3">
+              <h3 className="text-white font-medium">Wyniki wyszukiwania</h3>
+              <p className="text-[#64748B] text-sm mb-4">
+                Zaznacz kategorie uwzględniane przy przeszukiwaniu (odznaczone typy są pomijane w API).
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {GLOBAL_SEARCH_CATEGORY_KEYS.map((key) => (
+                  <label
+                    key={key}
+                    className={`flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors ${
+                      enabled
+                        ? 'border-[#1A2642] bg-[#121B2D] hover:border-[#00FF88]/40'
+                        : 'border-[#1A2642] bg-[#0C1222] opacity-50 cursor-not-allowed'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-5 h-5 shrink-0 rounded border-[#1A2642]"
+                      checked={categories[key]}
+                      disabled={!enabled || saving}
+                      onChange={(e) =>
+                        setCategories((c) => ({ ...c, [key]: e.target.checked }))
+                      }
+                    />
+                    <span className="text-[#94A3B8]">{GLOBAL_SEARCH_CATEGORY_LABELS[key]}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => void save()}
+                disabled={loading || saving}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg font-medium hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {saving ? 'Zapisywanie…' : 'Zapisz ustawienia'}
+              </button>
+              {message && (
+                <span
+                  className={`text-sm ${
+                    message === 'Zapisano.' ? 'text-[#00FF88]' : 'text-[#FF6B35]'
+                  }`}
+                >
+                  {message}
+                </span>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'sla' | 'notifications' | 'analytics'>('users');
+  const [activeTab, setActiveTab] = useState<
+    'users' | 'roles' | 'sla' | 'notifications' | 'analytics' | 'global-search'
+  >('users');
 
   const users = [
     { id: '1', name: 'Admin User', email: 'admin@itsm.com', role: 'admin', status: 'active', lastActive: '2024-12-09 15:30' },
@@ -58,6 +236,7 @@ export function AdminPanel() {
     { id: 'sla' as const, label: 'Konfiguracja SLA', icon: Clock },
     { id: 'notifications' as const, label: 'Powiadomienia', icon: Bell },
     { id: 'analytics' as const, label: 'Analityka', icon: BarChart3 },
+    { id: 'global-search' as const, label: 'Wyszukiwanie globalne', icon: Search },
   ];
 
   return (
@@ -300,6 +479,8 @@ export function AdminPanel() {
           </div>
         </div>
       )}
+
+      {activeTab === 'global-search' && <AdminGlobalSearchSettings />}
     </div>
   );
 }

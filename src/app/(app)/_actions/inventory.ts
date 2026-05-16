@@ -5,14 +5,22 @@ import { prisma } from '@/lib/prisma';
 export type PartInput = {
   sku: string;
   name: string;
+  warehouseLocation?: string | null;
   quantity: number;
   minQuantity: number;
   price: number;
 };
 
+function normalizeWarehouseLocation(raw: unknown) {
+  if (raw === undefined || raw === null) return null;
+  const t = String(raw).trim();
+  return t === '' ? null : t;
+}
+
 export async function createPart(input: PartInput) {
   const sku = input.sku?.trim();
   const name = input.name?.trim();
+  const warehouseLocation = normalizeWarehouseLocation(input.warehouseLocation ?? null);
   const quantity = Number(input.quantity ?? 0);
   const minQuantity = Number(input.minQuantity ?? 0);
   const price = Number(input.price ?? 0);
@@ -23,11 +31,14 @@ export async function createPart(input: PartInput) {
   if (Number.isNaN(minQuantity) || minQuantity < 0) throw new Error('Minimalna ilość musi być większa lub równa 0');
   if (Number.isNaN(price) || price < 0) throw new Error('Cena musi być większa lub równa 0');
 
-  const created = await prisma.part.create({ data: { sku, name, quantity, minQuantity, price } });
+  const created = await prisma.part.create({
+    data: { sku, name, warehouseLocation, quantity, minQuantity, price },
+  });
   return {
     id: created.id,
     sku: created.sku,
     name: created.name,
+    warehouseLocation: created.warehouseLocation,
     quantity: created.quantity,
     minQuantity: created.minQuantity,
     price: Number(created.price ?? 0),
@@ -65,12 +76,16 @@ export async function updatePart(id: string, input: Partial<PartInput>) {
     if (Number.isNaN(p) || p < 0) throw new Error('Cena musi być większa lub równa 0');
     data.price = p;
   }
+  if (input.warehouseLocation !== undefined) {
+    data.warehouseLocation = normalizeWarehouseLocation(input.warehouseLocation);
+  }
 
   const updated = await prisma.part.update({ where: { id }, data });
   return {
     id: updated.id,
     sku: updated.sku,
     name: updated.name,
+    warehouseLocation: updated.warehouseLocation,
     quantity: updated.quantity,
     minQuantity: updated.minQuantity,
     price: Number(updated.price ?? 0),
@@ -104,6 +119,7 @@ export async function reservePart(partId: string, ticketId: string, quantity: nu
       id: updated.id,
       sku: updated.sku,
       name: updated.name,
+      warehouseLocation: updated.warehouseLocation,
       quantity: updated.quantity,
       minQuantity: updated.minQuantity,
       price: Number(updated.price ?? 0),
@@ -137,6 +153,7 @@ export async function consumePart(partId: string, quantity: number) {
       id: updated.id,
       sku: updated.sku,
       name: updated.name,
+      warehouseLocation: updated.warehouseLocation,
       quantity: updated.quantity,
       minQuantity: updated.minQuantity,
       price: Number(updated.price ?? 0),

@@ -58,19 +58,46 @@ const typeConfig = {
 export function GlobalSearch() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [toolbarConfigLoaded, setToolbarConfigLoaded] = useState(false);
+  const [toolbarEnabled, setToolbarEnabled] = useState(false);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const canSearch = query.trim().length >= 2;
+  const canSearch = toolbarEnabled && query.trim().length >= 2;
+
+  useEffect(() => {
+    const loadToolbar = async () => {
+      try {
+        const res = await fetch('/api/admin/global-search');
+        if (!res.ok) throw new Error('fetch');
+        const data = await res.json();
+        if (typeof data.globalSearchEnabled === 'boolean') {
+          setToolbarEnabled(data.globalSearchEnabled);
+        } else {
+          setToolbarEnabled(true);
+        }
+      } catch {
+        setToolbarEnabled(true);
+      } finally {
+        setToolbarConfigLoaded(true);
+      }
+    };
+
+    void loadToolbar();
+    const handler = () => void loadToolbar();
+    window.addEventListener('pbl-global-search-updated', handler);
+    return () => window.removeEventListener('pbl-global-search-updated', handler);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    if (!toolbarEnabled) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
@@ -84,7 +111,15 @@ export function GlobalSearch() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [toolbarEnabled]);
+
+  useEffect(() => {
+    if (!toolbarEnabled) {
+      setOpen(false);
+      setQuery('');
+      setResults([]);
+    }
+  }, [toolbarEnabled]);
 
   useEffect(() => {
     if (!open) return;
@@ -133,7 +168,7 @@ export function GlobalSearch() {
 
   const helperText = useMemo(() => {
     if (!query.trim()) {
-      return 'Szukaj po numerze zlecenia, kliencie, telefonie, urządzeniu, numerze seryjnym albo kosztorysie.';
+      return 'Szukaj po numerze zlecenia, kliencie, telefonie, urządzeniu, numerze seryjnym, kosztorysie lub części w magazynie.';
     }
 
     if (!canSearch) {
@@ -161,6 +196,14 @@ export function GlobalSearch() {
     close();
     router.push(href);
   };
+
+  if (!mounted || !toolbarConfigLoaded) {
+    return null;
+  }
+
+  if (!toolbarEnabled) {
+    return null;
+  }
 
   return (
     <>

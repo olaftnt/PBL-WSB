@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  categoryIncluded,
+  getGlobalSearchSettingsResolved,
+} from '@/lib/globalSearchSettings';
 
 type SearchResult = {
   id: string;
@@ -41,6 +45,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ results: [] });
   }
 
+  const { globalSearchEnabled, categories } = await getGlobalSearchSettingsResolved();
+
+  if (!globalSearchEnabled) {
+    return NextResponse.json({ results: [] });
+  }
+
   const normalizedQuery = normalize(query);
   const contains = {
     contains: query,
@@ -48,7 +58,8 @@ export async function GET(req: Request) {
   };
 
   const [tickets, customers, devices, quotes, parts] = await Promise.all([
-    prisma.ticket.findMany({
+    categoryIncluded(categories, 'ticket')
+      ? prisma.ticket.findMany({
       where: {
         OR: [
           { number: contains },
@@ -71,8 +82,10 @@ export async function GET(req: Request) {
         device: { select: { name: true, model: true, serial: true, isDeleted: true } },
       },
       take: 5,
-    }),
-    prisma.customer.findMany({
+    })
+      : Promise.resolve([]),
+    categoryIncluded(categories, 'customer')
+      ? prisma.customer.findMany({
       where: {
         OR: [{ name: contains }, { email: contains }, { phone: contains }],
       },
@@ -84,8 +97,10 @@ export async function GET(req: Request) {
         phone: true,
       },
       take: 5,
-    }),
-    prisma.device.findMany({
+    })
+      : Promise.resolve([]),
+    categoryIncluded(categories, 'device')
+      ? prisma.device.findMany({
       where: {
         isDeleted: false,
         OR: [
@@ -105,8 +120,10 @@ export async function GET(req: Request) {
         customer: { select: { name: true } },
       },
       take: 5,
-    }),
-    prisma.quote.findMany({
+    })
+      : Promise.resolve([]),
+    categoryIncluded(categories, 'quote')
+      ? prisma.quote.findMany({
       where: {
         OR: [
           { number: contains },
@@ -128,22 +145,30 @@ export async function GET(req: Request) {
         customer: { select: { name: true } },
       },
       take: 5,
-    }),
-    prisma.part.findMany({
+    })
+      : Promise.resolve([]),
+    categoryIncluded(categories, 'part')
+      ? prisma.part.findMany({
       where: {
-        OR: [{ name: contains }, { sku: contains }],
+        OR: [
+          { name: contains },
+          { sku: contains },
+          { warehouseLocation: contains },
+        ],
       },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
         sku: true,
         name: true,
+        warehouseLocation: true,
         quantity: true,
         reserved: true,
         price: true,
       },
       take: 5,
-    }),
+    })
+      : Promise.resolve([]),
   ]);
 
   const results: SearchResult[] = [
@@ -227,11 +252,15 @@ export async function GET(req: Request) {
       subtitle: [
         `Dostępne: ${part.quantity - part.reserved} szt.`,
         `${Number(part.price ?? 0).toFixed(2)} zł`,
-      ].join(' · '),
-      href: '/inventory',
+        part.warehouseLocation ? `Lok.: ${part.warehouseLocation}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      href: `/inventory?part=${part.id}`,
       score: Math.max(
         scoreTextMatch(part.sku, normalizedQuery, 420, 350, 260),
         scoreTextMatch(part.name, normalizedQuery, 360, 290, 200),
+        scoreTextMatch(part.warehouseLocation, normalizedQuery, 300, 230, 160),
       ),
     })),
   ]

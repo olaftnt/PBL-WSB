@@ -163,7 +163,7 @@ export function QuoteDetail({
     const query = (partSearchByRow[rowId] ?? "").trim().toLowerCase();
     const filtered = query
       ? availableParts.filter((part) =>
-          `${part.name} ${part.sku}`.toLowerCase().includes(query)
+          `${part.name} ${part.sku} ${part.warehouseLocation ?? ''}`.toLowerCase().includes(query)
         )
       : availableParts;
     const selected = selectedPartId
@@ -487,6 +487,7 @@ export function QuoteDetail({
                                 </span>
                                 <span className="block text-xs text-[#64748B]">
                                   {p.quantity - p.reserved} szt.
+                                  {p.warehouseLocation ? ` · Lok.: ${p.warehouseLocation}` : ''}
                                 </span>
                               </button>
                             ))}

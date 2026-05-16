@@ -2,7 +2,15 @@ import { prisma } from '@/lib/prisma';
 import InventoryClient from './InventoryClient';
 import type { PartListItem, TicketOption } from '@/types/inventory';
 
-export default async function InventoryPage() {
+export default async function InventoryPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ part?: string }>;
+}) {
+  const sp = searchParams ? await searchParams : {};
+  const focusPartId =
+    typeof sp.part === 'string' && sp.part.trim().length > 0 ? sp.part.trim() : undefined;
+
   const parts = await prisma.part.findMany({
     orderBy: { createdAt: 'desc' },
   });
@@ -22,6 +30,7 @@ export default async function InventoryPage() {
       id: p.id,
       sku: p.sku,
       name: p.name,
+      warehouseLocation: p.warehouseLocation ?? null,
       quantity: p.quantity,
       minQuantity: p.minQuantity,
       price: Number(p.price),
@@ -37,5 +46,11 @@ export default async function InventoryPage() {
     title: t.title,
   }));
 
-  return <InventoryClient parts={mappedParts} tickets={ticketOptions} />;
+  return (
+    <InventoryClient
+      parts={mappedParts}
+      tickets={ticketOptions}
+      focusPartId={focusPartId}
+    />
+  );
 }
