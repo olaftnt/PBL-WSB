@@ -64,3 +64,27 @@ export async function setDeviceDeleted(input: {
 
   return updated;
 }
+
+export async function transferDeviceCustomer(input: {
+  id: string;
+  customerId: string;
+}) {
+  if (!input.id) throw new Error('ID urządzenia jest wymagane');
+  if (!input.customerId) throw new Error('ID nowego klienta jest wymagane');
+
+  const customer = await prisma.customer.findUnique({
+    where: { id: input.customerId },
+    select: { id: true },
+  });
+
+  if (!customer) {
+    throw new Error('Wybrany klient nie istnieje');
+  }
+
+  const updated = await prisma.device.update({
+    where: { id: input.id },
+    data: { customerId: input.customerId },
+  });
+
+  return updated;
+}

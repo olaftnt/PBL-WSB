@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Laptop, User, Ticket, Edit, Trash2, RotateCcw } from 'lucide-react';
 import { TicketStatus } from '@prisma/client';
-import { setDeviceDeleted, updateDevice } from '@/app/(app)/_actions/devices';
+import { setDeviceDeleted, transferDeviceCustomer, updateDevice } from '@/app/(app)/_actions/devices';
 import { viewToPath } from '@/lib/viewRouter';
 
 type DeviceSummary = {
@@ -25,9 +25,17 @@ type DeviceTicket = {
   createdAt: string;
 };
 
+type CustomerOption = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+};
+
 interface DeviceDetailProps {
   device: DeviceSummary;
   tickets: DeviceTicket[];
+  customers: CustomerOption[];
 }
 
 const statusClasses = {
@@ -43,16 +51,20 @@ const formatDate = (iso: string) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('pl-PL');
 };
 
-export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
+export function DeviceDetail({ device, tickets, customers }: DeviceDetailProps) {
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [name, setName] = useState(device.name);
   const [model, setModel] = useState(device.model ?? '');
   const [serial, setSerial] = useState(device.serial ?? '');
   const [notes, setNotes] = useState(device.notes ?? '');
+  const [transferCustomerId, setTransferCustomerId] = useState(device.customer.id);
   const [error, setError] = useState<string | null>(null);
+  const [transferError, setTransferError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isTogglingDeleted, setIsTogglingDeleted] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
 
   const handleUpdate = async (e: FormEvent) => {
     e.preventDefault();
@@ -89,6 +101,41 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
       setError(err?.message ?? 'Nie udało się zmienić statusu urządzenia.');
     } finally {
       setIsTogglingDeleted(false);
+    }
+  };
+
+  const openTransferModal = () => {
+    setTransferCustomerId(device.customer.id);
+    setTransferError(null);
+    setIsTransferOpen(true);
+  };
+
+  const handleTransferCustomer = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!transferCustomerId) {
+      setTransferError('Wybierz nowego właściciela.');
+      return;
+    }
+
+    if (transferCustomerId === device.customer.id) {
+      setTransferError('Wybierz innego klienta niż obecny właściciel.');
+      return;
+    }
+
+    setTransferError(null);
+    setIsTransferring(true);
+    try {
+      await transferDeviceCustomer({
+        id: device.id,
+        customerId: transferCustomerId,
+      });
+      setIsTransferOpen(false);
+      router.refresh();
+    } catch (err: any) {
+      setTransferError(err?.message ?? 'Nie udało się zmienić właściciela.');
+    } finally {
+      setIsTransferring(false);
     }
   };
 
@@ -178,6 +225,13 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
             >
               <p className="text-white mb-1">{device.customer.name}</p>
               <p className="text-[#94A3B8] text-sm">{device.customer.email ?? '—'}</p>
+            </button>
+            <button
+              type="button"
+              onClick={openTransferModal}
+              className="mt-3 w-full rounded-lg border border-[#00D9FF]/30 bg-[#00D9FF]/10 px-4 py-2 text-sm text-[#00D9FF] hover:bg-[#00D9FF]/20 transition-colors"
+            >
+              Zmień właściciela
             </button>
           </div>
 
@@ -307,6 +361,66 @@ export function DeviceDetail({ device, tickets }: DeviceDetailProps) {
                   type="button"
                   onClick={() => setIsEditOpen(false)}
                   disabled={isSaving}
+                  className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
+                >
+                  Anuluj
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer owner modal */}
+      {isTransferOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-[#0C1222] rounded-2xl p-6 border border-[#1A2642] max-w-2xl w-full">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white">Zmień właściciela urządzenia</h3>
+              <button
+                onClick={() => setIsTransferOpen(false)}
+                className="text-[#94A3B8] hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <form className="space-y-4" onSubmit={handleTransferCustomer}>
+              <div className="rounded-lg border border-[#1A2642] bg-[#121B2D] p-4">
+                <p className="text-[#64748B] text-sm mb-1">Obecny właściciel</p>
+                <p className="text-white">{device.customer.name}</p>
+              </div>
+              <div>
+                <label className="block text-[#94A3B8] text-sm mb-2">Nowy właściciel</label>
+                <select
+                  value={transferCustomerId}
+                  onChange={(e) => setTransferCustomerId(e.target.value)}
+                  disabled={isTransferring}
+                  className="w-full px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white focus:outline-none focus:border-[#00FF88] transition-colors"
+                >
+                  {customers.map((customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.name}{customer.phone ? ` (${customer.phone})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {transferError && (
+                <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  {transferError}
+                </div>
+              )}
+              <div className="flex items-center gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={isTransferring}
+                  className="flex-1 py-3 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0C1222] rounded-lg hover:scale-105 transition-transform disabled:opacity-60"
+                >
+                  {isTransferring ? 'Przenoszenie...' : 'Zmień właściciela'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsTransferOpen(false)}
+                  disabled={isTransferring}
                   className="flex-1 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-[#94A3B8] hover:text-white transition-colors disabled:opacity-60"
                 >
                   Anuluj

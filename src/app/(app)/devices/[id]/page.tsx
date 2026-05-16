@@ -24,6 +24,16 @@ export default async function DeviceDetailPage({ params }: { params: Promise<{ i
 
   if (!device) return notFound();
 
+  const customers = await prisma.customer.findMany({
+    orderBy: { name: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+    },
+  });
+
   const tickets = device.tickets.map((t) => ({
     id: t.id,
     number: t.number,
@@ -48,6 +58,7 @@ export default async function DeviceDetailPage({ params }: { params: Promise<{ i
         ticketsCount: device._count.tickets,
       }}
       tickets={tickets}
+      customers={customers}
     />
   );
 }
