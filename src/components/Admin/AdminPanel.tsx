@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { 
   Users, 
   Shield, 
@@ -394,16 +395,42 @@ function AdminQuotesTicketsSettings() {
   );
 }
 
-export function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<
-    | 'users'
-    | 'roles'
-    | 'sla'
-    | 'notifications'
-    | 'analytics'
-    | 'quotes-tickets'
-    | 'global-search'
-  >('users');
+function AdminPanelInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const tabs = [
+    { id: 'users' as const, label: 'Zarządzanie użytkownikami', icon: Users },
+    { id: 'roles' as const, label: 'Role i dostęp', icon: Shield },
+    { id: 'sla' as const, label: 'Konfiguracja SLA', icon: Clock },
+    { id: 'notifications' as const, label: 'Powiadomienia', icon: Bell },
+    { id: 'analytics' as const, label: 'Analityka', icon: BarChart3 },
+    { id: 'quotes-tickets' as const, label: 'Zlecenia i kosztorysy', icon: SlidersHorizontal },
+    { id: 'global-search' as const, label: 'Wyszukiwanie globalne', icon: Search },
+  ];
+  type AdminTabId = (typeof tabs)[number]['id'];
+
+  const parseTabFromUrl = (raw: string | null): AdminTabId => {
+    if (raw && tabs.some((t) => t.id === raw)) {
+      return raw as AdminTabId;
+    }
+    return 'users';
+  };
+
+  const activeTab = parseTabFromUrl(searchParams.get('tab'));
+
+  const setActiveTab = (id: AdminTabId) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id === 'users') {
+      params.delete('tab');
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    } else {
+      params.set('tab', id);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  };
 
   const users = [
     { id: '1', name: 'Admin User', email: 'admin@itsm.com', role: 'admin', status: 'active', lastActive: '2024-12-09 15:30' },
@@ -438,16 +465,6 @@ export function AdminPanel() {
     { name: 'Bateria MacBook', uses: 32, trend: 'up' },
     { name: 'Ekran Samsung', uses: 28, trend: 'down' },
     { name: 'Ładowarka USB-C', uses: 24, trend: 'up' },
-  ];
-
-  const tabs = [
-    { id: 'users' as const, label: 'Zarządzanie użytkownikami', icon: Users },
-    { id: 'roles' as const, label: 'Role i dostęp', icon: Shield },
-    { id: 'sla' as const, label: 'Konfiguracja SLA', icon: Clock },
-    { id: 'notifications' as const, label: 'Powiadomienia', icon: Bell },
-    { id: 'analytics' as const, label: 'Analityka', icon: BarChart3 },
-    { id: 'quotes-tickets' as const, label: 'Zlecenia i kosztorysy', icon: SlidersHorizontal },
-    { id: 'global-search' as const, label: 'Wyszukiwanie globalne', icon: Search },
   ];
 
   return (
@@ -695,5 +712,21 @@ export function AdminPanel() {
 
       {activeTab === 'global-search' && <AdminGlobalSearchSettings />}
     </div>
+  );
+}
+
+export function AdminPanel() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6 animate-pulse px-2">
+          <div className="h-10 w-64 rounded-lg bg-[#121B2D]" />
+          <div className="h-[4.75rem] rounded-xl bg-[#0C1222] border border-[#1A2642]" />
+          <div className="min-h-[240px] rounded-xl bg-[#0C1222] border border-[#1A2642]" />
+        </div>
+      }
+    >
+      <AdminPanelInner />
+    </Suspense>
   );
 }
