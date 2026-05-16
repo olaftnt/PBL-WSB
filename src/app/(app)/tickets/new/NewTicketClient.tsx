@@ -7,6 +7,7 @@ import { NewTicket } from '@/components/TicketManagement/NewTicket';
 import { createTicket } from '../../_actions/tickets';
 import { createCustomer, type CreateCustomerInput } from '../../_actions/customers';
 import { createDevice } from '../../_actions/devices';
+import { hideTicketAccessoryOption, recordTicketAccessoryUsage } from '../../_actions/accessories';
 
 type Customer = {
   id: string;
@@ -32,14 +33,23 @@ type CreateDevicePayload = {
   notes?: string | null;
 };
 
+type AccessoryOption = {
+  id: string;
+  name: string;
+  isDeleted: boolean;
+  popularity: number;
+};
+
 export default function NewTicketClient({
   customers,
   devices,
+  accessoryOptions,
   initialCustomerId,
   initialDeviceId,
 }: {
   customers: Customer[];
   devices: Device[];
+  accessoryOptions: AccessoryOption[];
   initialCustomerId?: string;
   initialDeviceId?: string;
 }) {
@@ -49,6 +59,7 @@ export default function NewTicketClient({
     <NewTicket
       customers={customers}
       devices={devices}
+      accessoryOptions={accessoryOptions}
       initialCustomerId={initialCustomerId}
       initialDeviceId={initialDeviceId}
       onCancel={() => router.push('/tickets')}
@@ -63,6 +74,12 @@ export default function NewTicketClient({
       }}
       onCreateDevice={async (payload: CreateDevicePayload) => {
         return await createDevice(payload);
+      }}
+      onRecordAccessoryUsage={async (name: string) => {
+        return await recordTicketAccessoryUsage({ name });
+      }}
+      onHideAccessoryOption={async (id: string) => {
+        return await hideTicketAccessoryOption({ id });
       }}
     />
   );

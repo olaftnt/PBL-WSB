@@ -966,16 +966,27 @@ export function TicketDetail({
                   <p className="text-white">{ticket.device?.serial ?? "—"}</p>
                 </div>
 
-                <div>
-                  <p className="text-[#64748B] text-sm mb-1">Akcesoria</p>
-                  <p className="text-white">
-                    {ticket.accessories?.length
-                      ? ticket.accessories.join(", ")
-                      : "—"}
-                  </p>
-                </div>
               </div>
             </div>
+          </div>
+
+          {/* Accessories */}
+          <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
+            <h3 className="text-white mb-4">Akcesoria</h3>
+            {ticket.accessories?.length ? (
+              <div className="flex flex-wrap gap-2">
+                {ticket.accessories.map((accessory) => (
+                  <span
+                    key={accessory}
+                    className="rounded-full border border-[#00FF88]/30 bg-[#00FF88]/10 px-3 py-1 text-sm text-[#00FF88]"
+                  >
+                    {accessory}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[#94A3B8]">Brak akcesoriów.</p>
+            )}
           </div>
 
           {/* Description */}

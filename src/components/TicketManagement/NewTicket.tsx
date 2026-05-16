@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Save, User, Smartphone, Plus, Search } from 'lucide-react';
+import { ArrowLeft, Save, User, Smartphone, Plus, Search, Trash2, X } from 'lucide-react';
 
 type Customer = {
   id: string;
@@ -17,6 +17,13 @@ type Device = {
   serial?: string | null;
   model?: string | null;
   notes?: string | null;
+};
+
+type AccessoryOption = {
+  id: string;
+  name: string;
+  isDeleted: boolean;
+  popularity: number;
 };
 
 type PrismaPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
@@ -39,6 +46,7 @@ export type CreateDevicePayload = {
 interface NewTicketProps {
   customers: Customer[];
   devices: Device[];
+  accessoryOptions: AccessoryOption[];
   initialCustomerId?: string;
   initialDeviceId?: string;
 
@@ -56,6 +64,8 @@ interface NewTicketProps {
 
   onCreateCustomer: (payload: CreateCustomerPayload) => Promise<Customer>;
   onCreateDevice: (payload: CreateDevicePayload) => Promise<Device>;
+  onRecordAccessoryUsage: (name: string) => Promise<AccessoryOption>;
+  onHideAccessoryOption: (id: string) => Promise<AccessoryOption>;
 
   onCancel: () => void;
   onCreated: (ticketId: string) => void;
@@ -64,11 +74,14 @@ interface NewTicketProps {
 export function NewTicket({
   customers,
   devices,
+  accessoryOptions,
   initialCustomerId,
   initialDeviceId,
   onCreate,
   onCreateCustomer,
   onCreateDevice,
+  onRecordAccessoryUsage,
+  onHideAccessoryOption,
   onCancel,
   onCreated,
 }: NewTicketProps) {
@@ -95,6 +108,8 @@ export function NewTicket({
 
   const [customersState, setCustomersState] = useState<Customer[]>(customers);
   const [devicesState, setDevicesState] = useState<Device[]>(devices);
+  const [accessoryOptionsState, setAccessoryOptionsState] = useState<AccessoryOption[]>(accessoryOptions);
+  const [accessorySearch, setAccessorySearch] = useState('');
 
 
   const [showQuickCustomer, setShowQuickCustomer] = useState(false);
@@ -124,12 +139,117 @@ export function NewTicket({
     accessories: [] as string[],
   });
 
-  const accessoryOptions = ['Ładowarka', 'Torba', 'Okablowanie', 'Słuchawki', 'Instrukcja obsługi'];
+  const normalizeAccessory = (value: string) =>
+    value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('pl-PL');
 
   const devicesForCustomer = useMemo(() => {
     if (!selectedCustomer) return devicesState;
     return devicesState.filter((d) => d.customerId === selectedCustomer.id);
   }, [devicesState, selectedCustomer]);
+
+  const mergeAccessoryIntoState = (saved: AccessoryOption) => {
+    setAccessoryOptionsState((previous) =>
+      [...previous.filter((accessory) => accessory.id !== saved.id), saved].sort((a, b) => {
+        if (b.popularity !== a.popularity) return b.popularity - a.popularity;
+        return a.name.localeCompare(b.name, 'pl');
+      }),
+    );
+  };
+
+  const bumpAndSyncAccessory = async (name: string): Promise<AccessoryOption> => {
+    const row = await onRecordAccessoryUsage(name);
+    const option: AccessoryOption = {
+      id: row.id,
+      name: row.name,
+      isDeleted: row.isDeleted,
+      popularity: row.popularity,
+    };
+    mergeAccessoryIntoState(option);
+    return option;
+  };
+
+  const activeAccessoryOptions = useMemo(() => accessoryOptionsState.filter((accessory) => !accessory.isDeleted), [accessoryOptionsState]);
+
+  const filteredAccessoryOptions = useMemo(() => {
+    const q = normalizeAccessory(accessorySearch);
+
+    return activeAccessoryOptions
+      .filter((accessory) => {
+        if (formData.accessories.some((selected) => normalizeAccessory(selected) === normalizeAccessory(accessory.name))) {
+          return false;
+        }
+        if (!q) return true;
+
+        return normalizeAccessory(accessory.name).includes(q);
+      })
+      .slice(0, 8);
+  }, [accessorySearch, activeAccessoryOptions, formData.accessories]);
+
+  const canCreateAccessory =
+    Boolean(accessorySearch.trim()) &&
+    !formData.accessories.some((accessory) => normalizeAccessory(accessory) === normalizeAccessory(accessorySearch)) &&
+    !activeAccessoryOptions.some((accessory) => normalizeAccessory(accessory.name) === normalizeAccessory(accessorySearch));
+
+  const pickAccessoryOption = async (rawName: string) => {
+    const cleanName = rawName.trim().replace(/\s+/g, ' ');
+    if (!cleanName) return;
+
+    const saved = await bumpAndSyncAccessory(cleanName);
+
+    setFormData((current) => {
+      if (current.accessories.some((accessory) => normalizeAccessory(accessory) === normalizeAccessory(saved.name))) {
+        return current;
+      }
+
+      return {
+        ...current,
+        accessories: [...current.accessories, saved.name],
+      };
+    });
+
+    setAccessorySearch('');
+  };
+
+  const removeAccessoryFromSelection = (name: string) => {
+    setFormData((current) => ({
+      ...current,
+      accessories: current.accessories.filter((accessory) => accessory !== name),
+    }));
+  };
+
+  const hideAccessoryOption = async (id: string) => {
+    const hidden = await onHideAccessoryOption(id);
+    const option: AccessoryOption = {
+      id: hidden.id,
+      name: hidden.name,
+      isDeleted: hidden.isDeleted,
+      popularity: hidden.popularity,
+    };
+    mergeAccessoryIntoState(option);
+  };
+
+  const resolveAccessoriesForSubmit = async () => {
+    const cleanSearch = accessorySearch.trim().replace(/\s+/g, ' ');
+    const accessoriesList = [...formData.accessories];
+
+    if (!cleanSearch) {
+      return accessoriesList;
+    }
+
+    const row = await bumpAndSyncAccessory(filteredAccessoryOptions[0]?.name ?? cleanSearch);
+
+    if (
+      !accessoriesList.some(
+        (accessory) => normalizeAccessory(accessory) === normalizeAccessory(row.name),
+      )
+    ) {
+      accessoriesList.push(row.name);
+    }
+
+    setAccessorySearch('');
+
+    return accessoriesList;
+  };
 
   const mapPriorityToPrisma = (p: 'low' | 'medium' | 'high'): PrismaPriority => {
     if (p === 'low') return 'LOW';
@@ -157,6 +277,7 @@ export function NewTicket({
     setSubmitting(true);
     try {
       const title = `Serwis: ${selectedDevice.name}`;
+      const accessories = await resolveAccessoriesForSubmit();
 
       const created = await onCreate({
         customerId: selectedCustomer.id,
@@ -166,7 +287,7 @@ export function NewTicket({
         priority: mapPriorityToPrisma(formData.priorityUi),
         slaType: mapSlaToPrisma(formData.slaTypeUi),
         physicalCondition: formData.physicalCondition?.trim() || null,
-        accessories: formData.accessories,
+        accessories,
       });
 
       if (created?.id) {
@@ -406,30 +527,95 @@ export function NewTicket({
           {/* Accessories */}
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <h3 className="text-white mb-4">Akcesoria</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {accessoryOptions.map((accessory) => (
-                <label
-                  key={accessory}
-                  className="flex items-center gap-2 px-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg cursor-pointer hover:border-[#00FF88] transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.accessories.includes(accessory)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setFormData({ ...formData, accessories: [...formData.accessories, accessory] });
-                      } else {
-                        setFormData({
-                          ...formData,
-                          accessories: formData.accessories.filter((a) => a !== accessory),
-                        });
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-3.5 w-5 h-5 text-[#64748B]" />
+                <input
+                  type="text"
+                  value={accessorySearch}
+                  onChange={(e) => setAccessorySearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+
+                      const trimmed = accessorySearch.trim().replace(/\s+/g, ' ');
+                      if (filteredAccessoryOptions[0]) {
+                        void pickAccessoryOption(filteredAccessoryOptions[0].name);
+                        return;
                       }
-                    }}
-                    className="w-4 h-4 rounded border-[#1A2642] bg-[#121B2D]"
-                  />
-                  <span className="text-[#94A3B8]">{accessory}</span>
-                </label>
-              ))}
+                      if (trimmed) {
+                        void pickAccessoryOption(trimmed);
+                      }
+                    }
+                  }}
+                  placeholder="Wpisz akcesorium, np. Łado..."
+                  className="w-full pl-10 pr-4 py-3 bg-[#121B2D] border border-[#1A2642] rounded-lg text-white placeholder-[#64748B] focus:outline-none focus:border-[#00FF88] transition-colors"
+                />
+              </div>
+
+              {(filteredAccessoryOptions.length > 0 || canCreateAccessory) && (
+                <div className="overflow-hidden rounded-lg border border-[#1A2642] bg-[#121B2D]">
+                  {filteredAccessoryOptions.map((accessory) => (
+                    <div
+                      key={accessory.id}
+                      className="flex items-center gap-3 border-b border-[#1A2642] px-4 py-3 last:border-b-0"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => void pickAccessoryOption(accessory.name)}
+                        className="min-w-0 flex-1 text-left text-[#E2E8F0] hover:text-[#00FF88] transition-colors"
+                      >
+                        {accessory.name}
+                      </button>
+                      <span
+                        className="shrink-0 rounded-md border border-[#1A2642] bg-[#0C1222] px-2 py-0.5 text-xs tabular-nums text-[#94A3B8]"
+                        title="Popularność"
+                      >
+                        {accessory.popularity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void hideAccessoryOption(accessory.id)}
+                        className="shrink-0 rounded-lg p-2 text-[#64748B] hover:bg-[#FF6B35]/10 hover:text-[#FF6B35] transition-colors"
+                        title="Ukryj z podpowiedzi"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {canCreateAccessory && (
+                    <button
+                      type="button"
+                      onClick={() => void pickAccessoryOption(accessorySearch.trim().replace(/\s+/g, ' '))}
+                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-[#00FF88] hover:bg-[#00FF88]/10 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Dodaj "{accessorySearch.trim().replace(/\s+/g, ' ')}"
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {formData.accessories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.accessories.map((accessory) => (
+                    <span
+                      key={accessory}
+                      className="inline-flex items-center gap-2 rounded-full border border-[#00FF88]/30 bg-[#00FF88]/10 px-3 py-1 text-sm text-[#00FF88]"
+                    >
+                      {accessory}
+                      <button
+                        type="button"
+                        onClick={() => removeAccessoryFromSelection(accessory)}
+                        className="text-[#00FF88] hover:text-white transition-colors"
+                        title="Usuń z tego zgłoszenia"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

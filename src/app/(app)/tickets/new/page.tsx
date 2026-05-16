@@ -19,11 +19,21 @@ export default async function Page({
       : { isDeleted: false },
     orderBy: { name: 'asc' },
   });
+  const accessoryOptions = await prisma.ticketAccessoryOption.findMany({
+    orderBy: [{ popularity: 'desc' }, { name: 'asc' }],
+    select: {
+      id: true,
+      name: true,
+      isDeleted: true,
+      popularity: true,
+    },
+  });
 
   return (
     <NewTicketClient
       customers={customers}
       devices={devices}
+      accessoryOptions={accessoryOptions}
       initialCustomerId={customerId}
       initialDeviceId={deviceId}
     />

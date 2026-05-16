@@ -126,6 +126,20 @@ model TicketEvent {
   @@index([createdAt])
 }
 
+model TicketAccessoryOption {
+  id             String   @id @default(cuid())
+  name           String
+  normalizedName String   @unique
+  popularity     Int      @default(0)
+  isDeleted      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isDeleted])
+  @@index([popularity])
+  @@index([name])
+}
+
 model Part {
   id          String   @id @default(cuid())
   sku         String   @unique
