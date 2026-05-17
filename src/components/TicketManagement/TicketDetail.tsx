@@ -27,6 +27,8 @@ import { TicketEventType as TicketEventTypeEnum } from "@prisma/client";
 import { formatDistanceToNow, isPast, isValid } from "date-fns";
 import { pl } from "date-fns/locale";
 
+import { TicketChecklist } from "@/components/TicketChecklist";
+
 type TicketDetailModel = {
   id: string;
   number: string;
@@ -89,6 +91,12 @@ type TicketDetailModel = {
     repairProtocol?: {
       repairCost: string | number;
     } | null;
+  }>;
+
+  checklist?: Array<{
+    id: string;
+    task: string;
+    isChecked: boolean;
   }>;
 
   reservedParts?: Array<{
@@ -1264,6 +1272,8 @@ export function TicketDetail({
               </div>
             </div>
           </div>
+
+          <TicketChecklist ticketId={ticket.id} items={ticket.checklist || []} />
 
           <div className="bg-[#0C1222] rounded-xl p-6 border border-[#1A2642] shadow-lg">
             <h3 className="text-white mb-4 flex items-center gap-2">

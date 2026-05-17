@@ -100,6 +100,8 @@ model Ticket {
   customer Customer @relation(fields: [customerId], references: [id])
   device   Device?  @relation(fields: [deviceId], references: [id])
 
+  checklist        TicketChecklistItem[]
+
   events           TicketEvent[]
   partReservations PartReservation[]
   quotes           Quote[]
@@ -232,6 +234,19 @@ model RepairProtocol {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model TicketChecklistItem {
+  id        String   @id @default(cuid())
+  ticketId  String
+  task      String
+  isChecked Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
 }
 
 /** Pojedynczy rekord ustawień aplikacji (singleton `id`). */

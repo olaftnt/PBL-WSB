@@ -38,6 +38,11 @@ export default async function TicketPage({
     include: {
       customer: true,
       device: true,
+      checklist: {
+        orderBy: {
+          createdAt: 'asc',
+        },
+      },
       events: {
         orderBy: {
           createdAt: 'desc',
@@ -155,6 +160,12 @@ export default async function TicketPage({
     events: ticket.events.map((event) => ({
       ...event,
       createdAt: event.createdAt.toISOString(),
+    })),
+
+    checklist: ticket.checklist.map((item) => ({
+      ...item,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
     })),
 
     repairProtocol: ticket.repairProtocol

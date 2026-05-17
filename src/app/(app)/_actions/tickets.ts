@@ -20,6 +20,15 @@ export async function createTicket(input: CreateTicketInput) {
   if (!input.customerId) throw new Error('ID klienta jest wymagane');
   if (!input.title?.trim()) throw new Error('Tytuł jest wymagany');
 
+  const UNIVERSAL_CHECKLIST = [
+    "Weryfikacja stanu wizualnego i wstępne testy",
+    "Diagnoza wstępna, demontaż i czyszczenie wnętrza",
+    "Szczegółowa diagnoza usterki i wycena (kontakt z klientem)",
+    "Wykonanie naprawy / wymiana podzespołów",
+    "Testy końcowe",
+    "Końcowe czyszczenie i przygotowanie do wydania",
+  ];
+
   const number = await generateTicketNumber();
 
   const created = await prisma.ticket.create({
@@ -33,6 +42,12 @@ export async function createTicket(input: CreateTicketInput) {
       slaType: input.slaType,
       physicalCondition: input.physicalCondition?.trim() || null,
       accessories: input.accessories ?? [],
+      checklist: {
+        create: UNIVERSAL_CHECKLIST.map((task) => ({
+          task,
+          isChecked: false,
+        })),
+      },
       events: {
         create: {
           type: TicketEventType.CREATED,
@@ -283,23 +298,23 @@ export async function completeTicketWithProtocol(input: CompleteTicketWithProtoc
     });
 
     const fullTicket = await tx.ticket.findUnique({
-  where: {
-    id: input.ticketId,
-  },
-  include: {
-    customer: true,
-    device: true,
-  },
-});
+      where: {
+        id: input.ticketId,
+      },
+      include: {
+        customer: true,
+        device: true,
+      },
+    });
 
-if (fullTicket?.customer?.email) {
-  await sendStatusEmail({
-    email: "pblwsb@o2.pl",
-    ticketNumber: fullTicket.number,
-    status: 'DONE',
-    device: fullTicket.device?.name,
-  });
-}
+    if (fullTicket?.customer?.email) {
+      await sendStatusEmail({
+        email: "pblwsb@o2.pl",
+        ticketNumber: fullTicket.number,
+        status: 'DONE',
+        device: fullTicket.device?.name,
+      });
+    }
 
     return {
       ok: true,
